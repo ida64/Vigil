@@ -7,5 +7,4 @@ find_package(doctest)
 
 add_executable(VigilSDKTest UnitTest.cpp
         UnitTest.h)
-
 target_link_libraries(VigilSDKTest doctest::doctest)

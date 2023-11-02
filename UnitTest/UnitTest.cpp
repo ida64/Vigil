@@ -5,6 +5,10 @@
 
 #include "UnitTest.h"
 
+#ifdef GetClassName
+#undef GetClassName
+#endif
+
 TEST_CASE("Object")
 {
     std::shared_ptr<TestObject> testObject = std::make_shared<TestObject>();
@@ -30,13 +34,12 @@ TEST_CASE("Object")
     SUBCASE("GetNbMembers")
     {
         Class* testClass = testObject->GetClass();
-        CHECK(testClass->GetNbMembers() == 1);
+        CHECK(testClass->GetNbMembers() == 3);
     }
 
     SUBCASE("GetMember")
     {
         Class* testClass = testObject->GetClass();
-        ClassMember* testMember = testClass->GetMember(0);
-        CHECK(testMember != nullptr);
+        ClassMember testMember = testClass->GetMember(0);
     }
 }

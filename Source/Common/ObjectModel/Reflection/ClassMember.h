@@ -26,7 +26,7 @@ namespace vigil
     {
     public: // Constructors and Destructor
         // Constructs a class member with the given ID, name, type ID, type, offset, and size
-        ClassMember(vgU32 id, vgString name, vgU32 typeID, vgString type, vgU32 offset, vgU32 size);
+        VG_INLINE ClassMember(vgU32 id, vgString name, vgU32 typeID, vgString type, vgU32 offset, vgU32 size);
 
         // Default destructor
         virtual ~ClassMember() = default;
@@ -66,7 +66,7 @@ namespace vigil
 
     }; // class ClassMember
 
-    ClassMember::ClassMember(vgU32 id, vgString name, vgU32 typeID, vgString type, vgU32 offset, vgU32 size)
+    VG_INLINE ClassMember::ClassMember(vgU32 id, vgString name, vgU32 typeID, vgString type, vgU32 offset, vgU32 size)
     : m_ID(id), m_Name(name), m_TypeID(typeID), m_Type(type), m_Offset(offset), m_Size(size)
     {
     }

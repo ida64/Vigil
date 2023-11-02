@@ -11,8 +11,8 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
-# CMAKE dirs
-
+# Ignore CMAKE files
+*.cmake
 
 # IDEA
 .idea

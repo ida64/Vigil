@@ -6,6 +6,7 @@
 #define VIGILSDK_BASECLASS_H
 
 #include <Common/Base/BaseDefs.h>
+#include <Common/ObjectModel/Reflection/ClassMember.h>
 
 #ifdef GetClassName
 #undef GetClassName
@@ -18,7 +19,7 @@ namespace vigil
     {
     public: // Constructors and Destructor
         // Constructs a class with the given name, ID, and parent class
-        Class(vgString className, vgU32 classID, Class* parentClass);
+        Class(ClassMember** members, vgS32 nbMembers, vgString className, vgU32 classID, Class* parentClass);
 
         // Default destructor
         virtual ~Class() = default;
@@ -33,7 +34,16 @@ namespace vigil
         // Returns the parent class
         VG_INLINE Class* GetParentClass() const;
 
+        // Returns the number of members in the class
+        VG_INLINE vgS32 GetNbMembers() const;
+
+        // Returns the member at the given index
+        VG_INLINE ClassMember* GetMember(vgS32 index) const;
+
     private: // Member Variables
+        ClassMember** m_Members;
+        vgS32 m_NbMembers;
+
         // Name of the class (e.g. "Class")
         vgString m_ClassName;
         // Unique ID of the class (e.g. 0x00000000)
@@ -44,8 +54,8 @@ namespace vigil
 
     }; // class Class
 
-    Class::Class(vgString className, vgU32 classID, Class* parentClass)
-    : m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
+    Class::Class(ClassMember** members, vgS32 nbMembers, vgString className, vgU32 classID, Class* parentClass)
+    : m_Members(members), m_NbMembers(nbMembers), m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
     {
     }
 
@@ -62,6 +72,16 @@ namespace vigil
     Class* Class::GetParentClass() const
     {
         return m_ParentClass;
+    }
+
+    vgS32 Class::GetNbMembers() const
+    {
+        return m_NbMembers;
+    }
+
+    ClassMember* Class::GetMember(vgS32 index) const
+    {
+        return m_Members[index];
     }
 
 } // namespace vigil

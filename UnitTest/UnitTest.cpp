@@ -26,4 +26,17 @@ TEST_CASE("Object")
         Class* testClass = testObject->GetClass();
         CHECK(testClass->GetClassID() == ComputeCrc32("TestObject", VG_ARRAY_SIZE("TestObject") - 1));
     }
+
+    SUBCASE("GetNbMembers")
+    {
+        Class* testClass = testObject->GetClass();
+        CHECK(testClass->GetNbMembers() == 1);
+    }
+
+    SUBCASE("GetMember")
+    {
+        Class* testClass = testObject->GetClass();
+        ClassMember* testMember = testClass->GetMember(0);
+        CHECK(testMember != nullptr);
+    }
 }

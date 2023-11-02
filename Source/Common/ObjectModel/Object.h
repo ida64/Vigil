@@ -5,13 +5,14 @@
 #ifndef VIGILSDK_OBJECT_H
 #define VIGILSDK_OBJECT_H
 
-#include <Common/ObjectModel/Class.h>
+#include <Common/ObjectModel/Reflection/Class.h>
+#include <Common/ObjectModel/Reflection/ClassMember.h>
+
 #include <Common/System/Crc32.h>
 
 // This macro is used to implement the GetClass() method for a class
-// It is used in the .cpp file of the class
 #define VG_REFLECTED_IMPL(Type) \
-Class g_##Type##Class(#Type, ComputeCrc32(#Type, VG_ARRAY_SIZE(#Type) - 1), nullptr); \
+Class g_##Type##Class(k##Type##ClassMembers, VG_ARRAY_SIZE(k##Type##ClassMembers), #Type, ComputeCrc32(#Type, VG_ARRAY_SIZE(#Type) - 1), nullptr); \
 Class* Type::GetClass() const \
 { \
     return &g_##Type##Class; \

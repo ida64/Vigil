@@ -22,6 +22,17 @@ public: // Constructors and Destructor
 
 public: // Methods
     virtual Class* GetClass() const override;
+
+private: // Member Variables
+    int m_Test;
+public:
+    VG_CLASS_MEMBER(int, Test);
+
+};
+
+VG_CLASS_MEMBER_ARRAY(TestObject)
+{
+    &TestObject::ms_TestClassMember
 };
 
 VG_REFLECTED_IMPL(TestObject);

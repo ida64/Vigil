@@ -30,16 +30,12 @@ TEST_CASE("Object")
         CHECK_EQ(testClass->GetClassID(), VG_CRC32("TestObject"));
     }
 
-    SUBCASE("GetNbMembers")
-    {
-        CHECK_EQ(testClass->GetNbMembers(), 3);
-    }
-
     SUBCASE("GetMember")
     {
-        const ClassMember& testMember = testClass->GetMember(0);
-        CHECK_EQ(testMember.GetName(), "Foo");
+        const ClassMember* testMember = testClass->GetMembers()[0];
+        CHECK_EQ(testMember->GetName(), "Foo");
     }
+
 }
 
 TEST_CASE("JsonReader")
@@ -62,6 +58,34 @@ TEST_CASE("JsonReader")
         CHECK_EQ(testObject->Foo, true);
         CHECK_EQ(testObject->Bar, 2);
         CHECK_EQ(strcmp(testObject->Baz, "value"), 0);
+    }
+}
+
+TEST_CASE("JsonWriter")
+{
+    nlohmann::json testJson = R"(
+    {
+        "Foo": true,
+        "Bar": 2,
+        "Baz": "value"
+    }
+    )"_json;
+
+    const auto& testObject = std::make_shared<TestObject>();
+
+    JsonReader testReader(testJson);
+    CHECK_EQ(Object::Deserialize(testObject, testReader), true);
+
+    JsonWriter testWriter;
+    CHECK_EQ(Object::Serialize(testObject, testWriter), true);
+
+    std::cout << testWriter.GetJson().dump(4) << std::endl;
+
+    SUBCASE("Write")
+    {
+        CHECK_EQ(testWriter.GetJson()["Foo"], true);
+        CHECK_EQ(testWriter.GetJson()["Bar"], 2);
+        CHECK_EQ(testWriter.GetJson()["Baz"], "value");
     }
 }
 

@@ -5,9 +5,11 @@
 #ifndef VIGILSDK_ARRAY_H
 #define VIGILSDK_ARRAY_H
 
+#include <cstring>
 #include <memory>
 
 #include <Common/Base/BaseDefs.h>
+#include <Common/Container/FixedArray.h>
 
 namespace vigil
 {
@@ -63,6 +65,15 @@ namespace vigil
         const T& operator[](vgU32 index) const
         {
             return m_Data[index];
+        }
+
+        Array& operator=(const FixedArrayBase& other)
+        {
+            this->Resize(other.m_Size);
+
+            memcpy_s(m_Data, m_Size * sizeof(T), other.m_Data, other.m_Size * sizeof(T));
+
+            return *this;
         }
 
     public: // Methods

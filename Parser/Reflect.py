@@ -131,35 +131,26 @@ def find_all_exposed_fields(cursor: clang.cindex.Cursor):
 
 # Generate class member array in the form of:
 # const ClassMember k<ClassName>ClassMembers[] = {...
-def generate_class_member_array(
-        class_cursor: clang.cindex.Cursor
-):
+def generate_class_member_array(class_cursor: clang.cindex.Cursor):
     result = []
-
-    # Find all exposed (public) fields in the class
     fields = find_all_exposed_fields(class_cursor)
 
     for field in fields:
         field_type = field.type.spelling
         field_name = field.spelling
-
         reflection_flags = ReflectedObject.deserialize(field.raw_comment)
 
         if field.type.kind == clang.cindex.TypeKind.CONSTANTARRAY:
             reflection_flags.set_option("Flags", "Flags_ConstantArray")
             field_type = field.type.element_type.spelling
-
             logging.info(f"Found constant array \"{field_name}\" of type \"{field_type}\" (Line {field.location.line})")
 
-        # Inject flags into the result from the comment
         flags = (reflection_flags.get_option("Flags", "Flags_None").replace("Flags_", "ClassMember::Flags_"))
-
         logging.info(f"Found field \"{field_name}\" of type \"{field_type}\" (Line {field.location.line})"
-                        f" with flags \"{flags}\"")
+                     f" with flags \"{flags}\"")
 
-        # Append the result
         result.append(
-            f"{{ VG_CRC32(\"{field_name}\"),"  # m_ID
+            f"    {{ VG_CRC32(\"{field_name}\"),"  # m_ID
             f"\"{field_name}\","  # m_Name
             f"VG_CRC32(\"{field_type}\"),"  # m_TypeID
             f"\"{field_type}\","  # m_Type
@@ -167,17 +158,72 @@ def generate_class_member_array(
             f"sizeof({class_cursor.spelling}),"  # m_Size
             f"{flags} }},\n")  # m_Flags
 
-    return f"const ClassMember k{class_cursor.spelling}ClassMembers[] = {{\n" + "".join(result) + "};"
+    return f"const vigil::ClassMember k{class_cursor.spelling}ClassMembers[] = {{\n" + "".join(result) + "};"
+
+
+def find_all_exposed_enums(cursor: clang.cindex.Cursor):
+    result = []
+
+    enum_declarations = filter_node_list_by_node_kind(cursor.get_children(), [clang.cindex.CursorKind.ENUM_DECL])
+
+    for enum_declaration in enum_declarations:
+        if enum_declaration.access_specifier != clang.cindex.AccessSpecifier.PUBLIC:
+            continue
+
+        result.append(enum_declaration)
+
+    return result
+
+# Generate class member array in the form of:
+# const ClassEnum k<ClassName>Enums[] = {
+#  { "EnumName", VG_CRC32("EnumName"), 2, {
+#   { "EnumValue1", VG_CRC32("EnumValue1"), 0 },
+# ...
+def generate_enums_array(class_cursor: clang.cindex.Cursor):
+    result = []
+    enums = find_all_exposed_enums(class_cursor)
+    value_arrays = []
+    enum_names = []
+
+    for enum in enums:
+        enum_name = enum.spelling
+        logging.info(f"Found enum \"{enum_name}\" (Line {enum.location.line})")
+
+        for enum_value in enum.get_children():
+            if enum_value.kind != clang.cindex.CursorKind.ENUM_CONSTANT_DECL:
+                continue
+
+            value_name = enum_value.spelling
+            logging.info(f"Found enum value \"{value_name}\" (Line {enum_value.location.line})")
+
+            value_arrays.append(
+                f"    {{ \"{value_name}\", VG_CRC32(\"{value_name}\"), {enum_value.enum_value} }}")
+
+        result.append(
+            f"const vigil::EnumValue k{class_cursor.spelling}{enum_name}Values[] = {{\n" + ",\n".join(value_arrays) + "\n};\n")
+
+        result.append(
+            f"const vigil::ClassEnum k{class_cursor.spelling}{enum_name} = {{ \"{enum_name}\", VG_CRC32(\"{enum_name}\"), k{class_cursor.spelling}{enum_name}Values, VG_ARRAY_SIZE(k{class_cursor.spelling}{enum_name}Values) }};")
+
+        value_arrays.clear()
+        enum_names.append(f"k{class_cursor.spelling}{enum_name}")
+
+    return ("".join(result), enum_names)
 
 
 def generate_class_reflection(class_node):
     inplace_members = generate_class_member_array(class_node)
-    override = f"VG_REFLECTED_IMPL({class_node.spelling})"
 
     reflected_object = ReflectedObject({"ClassName": class_node.spelling})
     reflected_object_str = reflected_object.serialize()
 
-    return f"// +{reflected_object_str}\n" + inplace_members + "\n" + override + "\n" + f"// -{reflected_object_str}\n"
+    enums_arr = generate_enums_array(class_node)
+    override = f"VG_REFLECTED_IMPL({class_node.spelling});"
+
+    return (f"// +{reflected_object_str}\n" + inplace_members
+            + "\n" + "".join(enums_arr[0])
+            + f"\nconst vigil::FixedArray<const ClassEnum*, {len(enums_arr[1])}> k{class_node.spelling}Enums = {{ {', '.join('&' + x for x in enums_arr[1])} }};"
+            + f"\n{override}\n" + f"// -{reflected_object_str}\n")
 
 
 def find_offset_to_reflection(class_node, file):
@@ -202,6 +248,7 @@ def find_offset_to_reflection(class_node, file):
 
 for class_node in filter_node_list_by_node_kind(translation_unit.cursor.get_children(),
                                                 [clang.cindex.CursorKind.CLASS_DECL]):
+
     target_file = sourceFile
     if target_file == "":
         continue

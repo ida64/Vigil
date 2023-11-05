@@ -10,6 +10,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <ios>
+
 namespace vigil
 {
     class JsonReader : public ObjectReader
@@ -24,6 +26,10 @@ namespace vigil
         /// @param [in] member Pointer to the member to read
         /// @return vgBool True if the member was read successfully, false otherwise
         vgBool Read(Object* object, ClassMember* member) override;
+
+        /// DocumentToStream writes the JSON document to the given stream
+        /// @param [in] stream Stream to write the JSON document to
+        void DocumentToStream(std::ostream& stream);
 
     private: // Member Variables
         /// JSON document to read from

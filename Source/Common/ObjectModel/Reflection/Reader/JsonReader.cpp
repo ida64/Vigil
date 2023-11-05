@@ -61,5 +61,11 @@ vgBool vigil::JsonReader::Read(Object* object, ClassMember* member)
         }
     }
 
-    return true;
+    return false;
+}
+
+void vigil::JsonReader::DocumentToStream(std::ostream& stream)
+{
+    const std::string& str = m_JsonDoc.dump();
+    stream.write(str.data(), str.size());
 }

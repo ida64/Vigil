@@ -7,18 +7,27 @@
 
 #include <Common/ObjectModel/Reflection/Class.h>
 #include <Common/ObjectModel/Reflection/ClassMember.h>
+#include <Common/ObjectModel/Reflection/ClassEnum.h>
 
 #include <Common/ObjectModel/Reflection/ObjectReader.h>
 
 #include <Common/System/Crc32.h>
+#include "Common/ObjectModel/Reflection/ObjectWriter.h"
 
 // This macro is used to implement the GetClass() method for a class
+// Class kTestObjectClass(kTestObjectClassMembers, VG_ARRAY_SIZE(kTestObjectClassMembers), kTestObjectEnums, VG_ARRAY_SIZE(kTestObjectEnums), "TestObject", ComputeCrc32("TestObject", VG_ARRAY_SIZE("TestObject") - 1), nullptr);
 #define VG_REFLECTED_IMPL(Type) \
-Class g_##Type##Class(k##Type##ClassMembers, VG_ARRAY_SIZE(k##Type##ClassMembers), #Type, ComputeCrc32(#Type, VG_ARRAY_SIZE(#Type) - 1), nullptr); \
-Class* Type::GetClass() const \
-{ \
-    return &g_##Type##Class; \
-}
+    Class* Type::GetClass() const \
+    { \
+        static Class kClass( \
+            k##Type##ClassMembers, \
+            VG_ARRAY_SIZE(k##Type##ClassMembers), \
+            k##Type##Enums.GetBase(), \
+            #Type, \
+            VG_CRC32(#Type), \
+            nullptr); \
+        return &kClass; \
+    }
 
 namespace vigil
 {
@@ -40,6 +49,12 @@ namespace vigil
         /// @param [in] reader Pointer to the reader to deserialize from
         /// @return vgBool True if the object was deserialized successfully, false otherwise
         static bool Deserialize(const ObjectPtr& object, ObjectReader& reader);
+
+        /// Serialize serializes the given object to the given writer
+        /// @param [in] object Pointer to the object to serialize
+        /// @param [in] writer Pointer to the writer to serialize to
+        /// @return vgBool True if the object was serialized successfully, false otherwise
+        static bool Serialize(const ObjectPtr& object, ObjectWriter& writer);
 
     public: // Methods
         /// GetPtrTo returns a pointer to the given member

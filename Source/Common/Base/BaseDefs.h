@@ -39,7 +39,7 @@ typedef double vgDouble;
 // 32-bit boolean
 typedef bool vgBool;
 // const char*
-typedef std::string_view vgString;
+typedef const char* vgString;
 
 template<vgS32 N>
 using vgStringN = char[N];

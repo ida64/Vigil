@@ -7,7 +7,10 @@
 
 #include <Common/Base/BaseDefs.h>
 #include <Common/Container/Array.h>
+#include <Common/Container/FixedArray.h>
+
 #include <Common/ObjectModel/Reflection/ClassMember.h>
+#include <Common/ObjectModel/Reflection/ClassEnum.h>
 
 #ifdef GetClassName
 #undef GetClassName
@@ -19,13 +22,14 @@ namespace vigil
     class Class
     {
     public: // Constructors and Destructor
-        /// Constructs a class with the given name, ID, and parent class
+        /// Default constructor
         /// @param [in] members Array of class members
-        /// @param [in] nbMembers Number of members in the class
+        /// @param [in] nbMembers Number of members in the array
+        /// @param [in] enums Array of class enums
         /// @param [in] className Name of the class
         /// @param [in] classID Unique ID of the class
         /// @param [in] parentClass Pointer to the parent class
-        VG_INLINE Class(const ClassMember* members, vgS32 nbMembers, vgString className, vgU32 classID, Class* parentClass);
+        VG_INLINE Class(const ClassMember* members, vgU32 nbMembers, const FixedArrayBase& enums, vgString className, vgU32 classID, Class* parentClass);
 
         /// Default destructor
         virtual ~Class() = default;
@@ -43,25 +47,16 @@ namespace vigil
         /// @return [out] m_ParentClass
         VG_INLINE Class* GetParentClass() const;
 
-        /// GetNbMembers returns the number of members in the class
-        /// @return [out] m_NbMembers
-        VG_INLINE vgS32 GetNbMembers() const;
-
-        /// GetMember returns the member at the given index
-        /// @param [in] index Index of the member to return
-        /// @return [out] m_Members[index]
-        VG_INLINE ClassMember GetMember(vgS32 index) const;
-
         /// GetMembers returns an array of all members in the class
         /// @return [out] Array of all members in the class
-        VG_INLINE Array<ClassMember> GetMembers() const;
+        VG_INLINE Array<ClassMember*> GetMembers() const;
 
     private: // Member Variables
         /// Array of class members
-        const ClassMember* m_Members;
+        Array<ClassMember*> m_Members;
 
-        /// Number of members in the class
-        vgS32 m_NbMembers;
+        /// Array of class enums
+        Array<ClassEnum*> m_Enums;
 
         /// Name of the class (e.g. "Class")
         vgString m_ClassName;
@@ -76,9 +71,14 @@ namespace vigil
 
     }; // class Class
 
-    VG_INLINE Class::Class(const ClassMember* members, vgS32 nbMembers, vgString className, vgU32 classID, Class* parentClass)
-    : m_Members(members), m_NbMembers(nbMembers), m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
+    VG_INLINE Class::Class(const ClassMember* members, vgU32 nbMembers, const FixedArrayBase& enums, vgString className, vgU32 classID, Class* parentClass)
+    : m_Members(nbMembers), m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
     {
+        // TODO: Add a copy-from to Array
+        for (vgU32 i = 0; i < nbMembers; ++i)
+            m_Members[i] = const_cast<ClassMember*>(&members[i]);
+
+        m_Enums = enums;
     }
 
     vgString Class::GetClassName() const
@@ -96,24 +96,9 @@ namespace vigil
         return m_ParentClass;
     }
 
-    vgS32 Class::GetNbMembers() const
+    Array<ClassMember*> Class::GetMembers() const
     {
-        return m_NbMembers;
-    }
-
-    ClassMember Class::GetMember(vgS32 index) const
-    {
-        return m_Members[index];
-    }
-
-    Array<ClassMember> Class::GetMembers() const
-    {
-        auto arr = Array<ClassMember>(m_NbMembers);
-        for(vgS32 i = 0; i < m_NbMembers; ++i)
-        {
-            arr[i] = m_Members[i];
-        }
-        return arr;
+        return m_Members;
     }
 
 } // namespace vigil

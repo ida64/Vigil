@@ -14,6 +14,14 @@ add_library(VigilSDK Source/Common/Base/BaseDefs.h
         Source/Common/ObjectModel/Reflection/ObjectReader.h
         Source/Common/ObjectModel/Reflection/Reader/JsonReader.h
         Source/Common/ObjectModel/Reflection/Reader/JsonReader.cpp
+        Source/Common/ObjectModel/Reflection/ClassEnum.h
+        Source/Common/ObjectModel/Reflection/ClassEnum.h
+        Source/Common/ObjectModel/Reflection/EnumValue.h
+        Source/Common/ObjectModel/Reflection/EnumValue.h
+        Source/Common/Container/FixedArray.h
+        Source/Common/ObjectModel/Reflection/ObjectWriter.h
+        Source/Common/ObjectModel/Reflection/Writer/JsonWriter.cpp
+        Source/Common/ObjectModel/Reflection/Writer/JsonWriter.h
 )
 
 find_package(nlohmann_json)

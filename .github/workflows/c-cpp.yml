@@ -17,6 +17,13 @@ jobs:
     - name: Setup Conan
       uses: jwidauer/setup-conan@v1
 
+    - name: Install dependencies
+      run: |
+        conan remote add conan-center https://center.conan.io
+        conan install nlohmann_json/3.9.1@ 
+        conan install doctest/2.4.6@
+      shell: bash
+
     - name: Create Build Directory
       run: mkdir build
 

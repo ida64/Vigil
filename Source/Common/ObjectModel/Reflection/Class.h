@@ -18,6 +18,7 @@
 
 namespace vigil
 {
+
     /// Class stores information about a class and its members
     class Class
     {

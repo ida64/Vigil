@@ -44,7 +44,7 @@ TEST_CASE("JsonReader")
     {
         "Foo": true,
         "Bar": 2,
-        "Baz": "value"
+        "Baz": 3.14159
     }
     )"_json;
 
@@ -57,7 +57,7 @@ TEST_CASE("JsonReader")
     {
         CHECK_EQ(testObject->Foo, true);
         CHECK_EQ(testObject->Bar, 2);
-        CHECK_EQ(strcmp(testObject->Baz, "value"), 0);
+        CHECK_EQ(testObject->Baz, 3.14159f);
     }
 }
 
@@ -67,7 +67,7 @@ TEST_CASE("JsonWriter")
     {
         "Foo": true,
         "Bar": 2,
-        "Baz": "value"
+        "Baz": 3.14159
     }
     )"_json;
 
@@ -75,6 +75,12 @@ TEST_CASE("JsonWriter")
 
     JsonReader testReader(testJson);
     CHECK_EQ(Object::Deserialize(testObject, testReader), true);
+
+    testObject->TestArray[0] = 1;
+    testObject->TestArray[1] = 2;
+    testObject->TestArray[2] = 3;
+    testObject->TestArray[3] = 4;
+    testObject->TestArray[4] = 5;
 
     JsonWriter testWriter;
     CHECK_EQ(Object::Serialize(testObject, testWriter), true);
@@ -85,7 +91,7 @@ TEST_CASE("JsonWriter")
     {
         CHECK_EQ(testWriter.GetJson()["Foo"], true);
         CHECK_EQ(testWriter.GetJson()["Bar"], 2);
-        CHECK_EQ(testWriter.GetJson()["Baz"], "value");
+        CHECK_EQ(testWriter.GetJson()["Baz"], 3.14159f);
     }
 }
 

@@ -19,6 +19,8 @@ namespace vigil
         TypeID_S32 = VG_CRC32("int32_t"),
         TypeID_U64 = VG_CRC32("uint64_t"),
         TypeID_S64 = VG_CRC32("int64_t"),
+        TypeID_Float = VG_CRC32("float"),
+        TypeID_Double = VG_CRC32("double"),
 
     }; // enum TypeID
 

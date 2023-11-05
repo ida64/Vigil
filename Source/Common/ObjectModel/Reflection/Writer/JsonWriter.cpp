@@ -6,40 +6,63 @@
 
 #include <iostream>
 
+template <typename T>
+bool Write(vigil::Object* object, vigil::ClassMember* member, nlohmann::json& m_JsonDoc)
+{
+    auto* ptr = reinterpret_cast<T*>(object->GetPtrTo(member));
+    if(!ptr)
+    {
+        return false;
+    }
+
+    if(member->IsConstantArray())
+    {
+        std::vector<T> array(ptr, ptr + member->GetSize() / sizeof(T));
+        m_JsonDoc[member->GetName()] = array;
+        return true;
+    }
+
+    m_JsonDoc[member->GetName()] = *ptr;
+    return true;
+}
+
 vgBool vigil::JsonWriter::Write(Object* object, ClassMember* member)
 {
     switch(member->GetTypeID())
     {
         case TypeID_Bool:
+        {
+            return ::Write<vgBool>(object, member, m_JsonDoc);
+        }
         case TypeID_Char:
         {
-            if (member->IsConstantArray() && member->GetTypeID() == TypeID_Char)
+            if (member->IsConstantArray())
             {
-                auto* ptrToString = reinterpret_cast<char*>(object->GetPtrTo(member));
-
-                std::string str(strlen(ptrToString), '\0');
-                memcpy_s(str.data(), str.size(), ptrToString, str.size());
-
-                m_JsonDoc[member->GetName()] = str;
+                auto* ptr = reinterpret_cast<char*>(object->GetPtrTo(member));
+                m_JsonDoc[member->GetName()] = std::string(ptr);
                 return true;
             }
-            m_JsonDoc[member->GetName()] = *reinterpret_cast<bool*>(object->GetPtrTo(member));
-            return true;
+            return ::Write<vgChar>(object, member, m_JsonDoc);
         }
         case TypeID_U32:
         case TypeID_S32:
         {
-            m_JsonDoc[member->GetName()] = *reinterpret_cast<vgU32*>(object->GetPtrTo(member));
-            return true;
+            return ::Write<vgU32>(object, member, m_JsonDoc);
         }
         case TypeID_U64:
         case TypeID_S64:
         {
-            m_JsonDoc[member->GetName()] = *reinterpret_cast<vgU64*>(object->GetPtrTo(member));
-            return true;
+            return ::Write<vgU64>(object, member, m_JsonDoc);
+        }
+        case TypeID_Double:
+        {
+            return ::Write<vgDouble>(object, member, m_JsonDoc);
+        }
+        case TypeID_Float:
+        {
+            return ::Write<vgFloat>(object, member, m_JsonDoc);
         }
     }
-
     return false;
 }
 

@@ -27,6 +27,8 @@ namespace vigil
         /// @return vgBool True if the member was read successfully, false otherwise
         vgBool Read(Object* object, ClassMember* member) override;
 
+        const nlohmann::json& GetJson() const;
+
         /// DocumentToStream writes the JSON document to the given stream
         /// @param [in] stream Stream to write the JSON document to
         void DocumentToStream(std::ostream& stream);

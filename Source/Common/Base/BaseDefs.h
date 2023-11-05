@@ -59,4 +59,13 @@ using vgStringN = char[N];
 
 #define VG_FROM_PTR_UNSAFE(Name) Name.get()
 
+//
+// Attributes and Annotations
+//
+
+
+// Annotated class
+#define VG_CLASS_REFLECTION __attribute__((annotate("Reflection")))
+
+
 #endif //VIGILSDK_BASEDEFS_H

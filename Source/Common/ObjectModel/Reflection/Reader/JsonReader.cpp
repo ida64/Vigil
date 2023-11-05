@@ -1,12 +1,33 @@
 /*
 * (C) 2023 Zel Software, SP
-* Please review the license provided before using this project in any capacity. 
+* Please review the license provided before using this project in any capacity.
 */
-
 #include "JsonReader.h"
 
+#include <iostream>
+
+template <typename T>
+bool Read(vigil::Object* object, vigil::ClassMember* member, const nlohmann::json& m_JsonDoc)
+{
+    auto* ptr = reinterpret_cast<T*>(object->GetPtrTo(member));
+    if(!ptr)
+    {
+        return false;
+    }
+
+    if(member->IsConstantArray())
+    {
+        std::vector<T> array = m_JsonDoc[member->GetName()].get<std::vector<T>>();
+        std::copy(array.begin(), array.end(), ptr);
+        return true;
+    }
+
+    *ptr = m_JsonDoc[member->GetName()].get<T>();
+    return true;
+}
+
 vigil::JsonReader::JsonReader(const nlohmann::json& json)
-: m_JsonDoc(json)
+        : m_JsonDoc(json)
 {
 }
 
@@ -19,53 +40,45 @@ vgBool vigil::JsonReader::Read(Object* object, ClassMember* member)
         return false;
     }
 
-    const nlohmann::json& jsonValue = m_JsonDoc[memberName];
-
     switch(member->GetTypeID())
     {
         case TypeID_Bool:
+        {
+            return ::Read<vgBool>(object, member, m_JsonDoc);
+        }
         case TypeID_Char:
         {
-            if(member->IsConstantArray() && member->GetTypeID() == TypeID_Char)
+            if (member->IsConstantArray())
             {
-                auto str = jsonValue.get_ref<const nlohmann::json::string_t&>();
-                if(str.size() <= member->GetSize())
-                {
-                    return memcpy_s(object->GetPtrTo(member),
-                                    member->GetSize(),
-                                    str.data(),
-                                    str.size()) == 0;
-                }
-                return false;
+                auto str = m_JsonDoc[member->GetName()].get<std::string>();
+                std::copy(str.begin(), str.end(), reinterpret_cast<char*>(object->GetPtrTo(member)));
+                return true;
             }
-            return memcpy_s(object->GetPtrTo(member),
-                            member->GetSize(),
-                            &jsonValue.get_ref<const vgBool&>(),
-                            sizeof(vgChar)) == 0;
+            return ::Read<vgChar>(object, member, m_JsonDoc);
         }
         case TypeID_U32:
         case TypeID_S32:
         {
-            return memcpy_s(object->GetPtrTo(member),
-                            member->GetSize(),
-                            &jsonValue.get_ref<const nlohmann::json::number_unsigned_t&>(),
-                            sizeof(vgU32)) == 0;
+            return ::Read<vgU32>(object, member, m_JsonDoc);
         }
         case TypeID_U64:
         case TypeID_S64:
         {
-            return memcpy_s(object->GetPtrTo(member),
-                            member->GetSize(),
-                            &jsonValue.get_ref<const nlohmann::json::number_unsigned_t&>(),
-                            sizeof(vgU64)) == 0;
+            return ::Read<vgU64>(object, member, m_JsonDoc);
+        }
+        case TypeID_Double:
+        {
+            return ::Read<vgDouble>(object, member, m_JsonDoc);
+        }
+        case TypeID_Float:
+        {
+            return ::Read<vgFloat>(object, member, m_JsonDoc);
         }
     }
-
     return false;
 }
 
-void vigil::JsonReader::DocumentToStream(std::ostream& stream)
+const nlohmann::json& vigil::JsonReader::GetJson() const
 {
-    const std::string& str = m_JsonDoc.dump();
-    stream.write(str.data(), str.size());
+    return m_JsonDoc;
 }

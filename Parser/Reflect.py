@@ -7,8 +7,11 @@
 import os
 import sys
 import logging
+import re
 
 import argparse
+from pprint import pprint
+
 import clang.cindex
 import typing
 
@@ -62,6 +65,8 @@ replaceList = [
     ("vgS32", "int32_t"),
     ("vgU64", "uint64_t"),
     ("vgS64", "int64_t"),
+    ("vgFloat", "float"),
+    ("VG_CLASS_REFLECTION", "__attribute__((annotate(\"VG_CLASS_REFLECTION\")))"),
 ]
 
 class ReflectedObject:
@@ -138,6 +143,7 @@ def generate_class_member_array(class_cursor: clang.cindex.Cursor):
     for field in fields:
         field_type = field.type.spelling
         field_name = field.spelling
+        field_size = f"sizeof({field_type})"
         reflection_flags = ReflectedObject.deserialize(field.raw_comment)
 
         if field.type.kind == clang.cindex.TypeKind.CONSTANTARRAY:
@@ -155,7 +161,7 @@ def generate_class_member_array(class_cursor: clang.cindex.Cursor):
             f"VG_CRC32(\"{field_type}\"),"  # m_TypeID
             f"\"{field_type}\","  # m_Type
             f"offsetof({class_cursor.spelling}, {field_name}),"  # m_Offset
-            f"sizeof({class_cursor.spelling}),"  # m_Size
+            f"{field_size},"  # m_Size
             f"{flags} }},\n")  # m_Flags
 
     return f"const vigil::ClassMember k{class_cursor.spelling}ClassMembers[] = {{\n" + "".join(result) + "};"
@@ -246,8 +252,16 @@ def find_offset_to_reflection(class_node, file):
     return start_line, end_line
 
 
+def is_class_reflected(class_node):
+    attributes = class_node.get_children()
+    for attribute in attributes:
+        if attribute.spelling == "VG_CLASS_REFLECTION":
+            return True
+
 for class_node in filter_node_list_by_node_kind(translation_unit.cursor.get_children(),
                                                 [clang.cindex.CursorKind.CLASS_DECL]):
+    if not is_class_reflected(class_node):
+        continue
 
     target_file = sourceFile
     if target_file == "":

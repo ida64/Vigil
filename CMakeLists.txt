@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 23)
 include_directories(Source)
 
 add_library(VigilSDK Source/Common/Base/BaseDefs.h
-        Source/Vigil.cpp
-        Source/Vigil.h
         Source/Common/System/Crc32.h
         Source/Common/ObjectModel/Object.h
         Source/Common/ObjectModel/Object.cpp

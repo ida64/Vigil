@@ -11,36 +11,34 @@
 
 TEST_CASE("Object")
 {
-    std::shared_ptr<TestObject> testObject = std::make_shared<TestObject>();
+    const auto& testObject = std::make_shared<TestObject>();
+
+    Class* testClass = testObject->GetClass();
 
     SUBCASE("GetClass")
     {
-        Class* testClass = testObject->GetClass();
-        CHECK(testClass != nullptr);
+        CHECK_NE(testClass, nullptr);
     }
 
     SUBCASE("GetClassName")
     {
-        Class* testClass = testObject->GetClass();
-        CHECK(testClass->GetClassName() == "TestObject");
+        CHECK_EQ(testClass->GetClassName(), "TestObject");
     }
 
     SUBCASE("GetClassID")
     {
-        Class* testClass = testObject->GetClass();
-        CHECK(testClass->GetClassID() == ComputeCrc32("TestObject", VG_ARRAY_SIZE("TestObject") - 1));
+        CHECK_EQ(testClass->GetClassID(), VG_CRC32("TestObject"));
     }
 
     SUBCASE("GetNbMembers")
     {
-        Class* testClass = testObject->GetClass();
         CHECK_EQ(testClass->GetNbMembers(), 3);
     }
 
     SUBCASE("GetMember")
     {
-        Class* testClass = testObject->GetClass();
-        ClassMember testMember = testClass->GetMember(0);
+        const ClassMember& testMember = testClass->GetMember(0);
+        CHECK_EQ(testMember.GetName(), "Foo");
     }
 }
 
@@ -65,7 +63,6 @@ TEST_CASE("JsonReader")
         CHECK_EQ(testObject->Bar, 2);
         CHECK_EQ(strcmp(testObject->Baz, "value"), 0);
     }
-
 }
 
 TEST_CASE("Array")

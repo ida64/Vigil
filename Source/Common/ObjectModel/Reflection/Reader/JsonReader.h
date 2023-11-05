@@ -18,9 +18,14 @@ namespace vigil
         virtual ~JsonReader() = default;
 
     public: // Methods
+        /// Read reads the given member from the given object
+        /// @param [in] object Pointer to the object to read from
+        /// @param [in] member Pointer to the member to read
+        /// @return vgBool True if the member was read successfully, false otherwise
         vgBool Read(Object* object, ClassMember* member) override;
 
     private: // Member Variables
+        /// JSON document to read from
         const nlohmann::json& m_JsonDoc;
 
     }; // class JsonReader

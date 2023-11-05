@@ -1,24 +1,46 @@
-import datetime
-from pprint import pprint
+# (C) 2023 Zel Software, SP
+# Please review the license provided before using this project in any capacity.
+#
+# This script is used to generate reflection code for classes.
+# Please use --help for more information.
 
+import os
+import sys
+import logging
+
+import argparse
 import clang.cindex
 import typing
 
-import sys
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
 
-args = sys.argv
+parser = argparse.ArgumentParser(
+    prog='Vigil Class Generator',
+    description='Generates reflection code for classes')
 
-if len(args) < 2:
-    print("Usage: ParseFile.py <file>")
+parser.add_argument('-file', metavar='file', type=str, nargs='+', help='file to parse')
+parser.add_argument('-v', '--cpp_version', metavar='cpp_version', type=str, nargs='?', default='c++17',
+                    help='C++ version to use')
+parser.add_argument('-llvm_path', metavar='llvm_path', type=str, nargs='?', help='Path to libclang')
+parser.add_argument('-save_tmp', metavar='save_tmp', type=bool, nargs='?', default=False,
+                    help='Save temporary file after parsing')
+
+args = parser.parse_args()
+
+if args.file is None:
+    logging.error("No file specified, view help with --help")
     sys.exit(1)
 
-# get config
+if args.llvm_path is None:
+    logging.error("No llvm path specified, view help with --help")
+    sys.exit(1)
+
 config = clang.cindex.Config()
-config.set_library_file("C:/Program Files/LLVM/bin/libclang.dll")
+config.set_library_file(args.llvm_path)
 
-sourceFile = args[1]
+sourceFile = args.file[0]
 
-print("Parsing file: " + sourceFile)
+logging.info(f"Analyzing \"{sourceFile}\"")
 
 # Copy to temp file
 tmpFile = sourceFile + ".tmp"
@@ -27,7 +49,7 @@ with open(sourceFile, "r") as f:
     with open(tmpFile, "w") as f2:
         f2.writelines(lines)
 
-print("Temp file: " + tmpFile)
+logging.info(f"Using temporary file \"{tmpFile}\"")
 
 replaceList = [
     ("vgBool", "bool"),
@@ -40,8 +62,34 @@ replaceList = [
     ("vgS32", "int32_t"),
     ("vgU64", "uint64_t"),
     ("vgS64", "int64_t"),
-    ("vgString", "std::string_view"),
 ]
+
+class ReflectedObject:
+    def __init__(self, options):
+        self.options = options
+
+    def serialize(self):
+        options_str = ', '.join(f'{name}:{value}' for name, value in self.options.items())
+        return f'Reflection({options_str})'
+
+    def get_option(self, name, default=None):
+        return self.options.get(name, default)
+
+    def set_option(self, name, value):
+        self.options[name] = value
+
+    @classmethod
+    def deserialize(cls, s):
+        if s is None:
+            return cls({})
+
+        start = s.find("(") + 1
+        end = s.find(")", start)
+        if start == 0 or end == -1:
+            return None
+        options_str = s[start:end]
+        options = dict(option.split(":") for option in options_str.split(", "))
+        return cls(options)
 
 # replace in temp file
 with open(tmpFile, "r") as f:
@@ -49,7 +97,6 @@ with open(tmpFile, "r") as f:
     for i in range(len(lines)):
         for j in replaceList:
             lines[i] = lines[i].replace(j[0], j[1])
-            print(f"{tmpFile}:{lines[i]}:{j[0]} => {j[1]}")
     with open(tmpFile, "w") as f2:
         f2.writelines(lines)
 
@@ -96,16 +143,19 @@ def generate_class_member_array(
         field_type = field.type.spelling
         field_name = field.spelling
 
-        print(f"Found field: {field_type} {field_name} {field.type.kind}")
-
         reflection_flags = ReflectedObject.deserialize(field.raw_comment)
 
         if field.type.kind == clang.cindex.TypeKind.CONSTANTARRAY:
             reflection_flags.set_option("Flags", "Flags_ConstantArray")
             field_type = field.type.element_type.spelling
 
+            logging.info(f"Found constant array \"{field_name}\" of type \"{field_type}\" (Line {field.location.line})")
+
         # Inject flags into the result from the comment
         flags = (reflection_flags.get_option("Flags", "Flags_None").replace("Flags_", "ClassMember::Flags_"))
+
+        logging.info(f"Found field \"{field_name}\" of type \"{field_type}\" (Line {field.location.line})"
+                        f" with flags \"{flags}\"")
 
         # Append the result
         result.append(
@@ -118,34 +168,6 @@ def generate_class_member_array(
             f"{flags} }},\n")  # m_Flags
 
     return f"const ClassMember k{class_cursor.spelling}ClassMembers[] = {{\n" + "".join(result) + "};"
-
-
-class ReflectedObject:
-    def __init__(self, options):
-        self.options = options
-
-    def serialize(self):
-        options_str = ', '.join(f'{name}:{value}' for name, value in self.options.items())
-        return f'Reflection({options_str})'
-
-    def get_option(self, name, default=None):
-        return self.options.get(name, default)
-
-    def set_option(self, name, value):
-        self.options[name] = value
-
-    @classmethod
-    def deserialize(cls, s):
-        if s is None:
-            return cls({})
-
-        start = s.find("(") + 1
-        end = s.find(")", start)
-        if start == 0 or end == -1:
-            return None
-        options_str = s[start:end]
-        options = dict(option.split(":") for option in options_str.split(", "))
-        return cls(options)
 
 
 def generate_class_reflection(class_node):
@@ -189,17 +211,20 @@ for class_node in filter_node_list_by_node_kind(translation_unit.cursor.get_chil
 
     offset = find_offset_to_reflection(class_node, target_file)
     if offset[0] != -1 and offset[1] != -1:
+        logging.info(f"Found class \"{class_node.spelling}\", replacing reflection between {offset[0]} and {offset[1]}")
+
         # remove old lines
         del lines[offset[0]:offset[1] + 1]
         # insert new lines
         lines.insert(offset[0], generate_class_reflection(class_node))
+
+        logging.info(f"{class_node.spelling} OK")
     else:
-        print(f"Skipping class \"{class_node.spelling}\", no reflection found")
+        logging.warning(f"Could not find reflection for class \"{class_node.spelling}\"")
         continue
 
     with open(target_file, "w") as f:
         f.writelines(lines)
 
-import os
-
-#os.remove(tmpFile)
+if not args.save_tmp:
+    os.remove(tmpFile)

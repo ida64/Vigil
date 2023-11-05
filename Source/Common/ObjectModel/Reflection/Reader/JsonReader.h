@@ -7,6 +7,7 @@
 
 #include <Common/ObjectModel/Object.h>
 #include <Common/ObjectModel/Reflection/ObjectReader.h>
+
 #include <nlohmann/json.hpp>
 
 namespace vigil

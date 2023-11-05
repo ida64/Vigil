@@ -45,7 +45,7 @@ namespace vigil
         /// GetPtrTo returns a pointer to the given member
         /// @param [in] member Pointer to the member to get a pointer to
         /// @return void* Pointer to the member
-        VG_INLINE void* GetPtrTo(ClassMember* member);
+        void* GetPtrTo(ClassMember* member);
 
         /// GetClass returns the class of the object
         /// @return Class* Pointer to the class of the object

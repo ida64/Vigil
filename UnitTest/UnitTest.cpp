@@ -34,7 +34,7 @@ TEST_CASE("Object")
     SUBCASE("GetNbMembers")
     {
         Class* testClass = testObject->GetClass();
-        CHECK(testClass->GetNbMembers() == 2);
+        CHECK_EQ(testClass->GetNbMembers(), 3);
     }
 
     SUBCASE("GetMember")

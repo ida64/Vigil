@@ -14,10 +14,6 @@ namespace vigil
     {
         TypeID_Bool = VG_CRC32("bool"),
         TypeID_Char = VG_CRC32("char"),
-        TypeID_U8 = VG_CRC32("uint8_t"),
-        TypeID_S8 = VG_CRC32("int8_t"),
-        TypeID_U16 = VG_CRC32("uint16_t"),
-        TypeID_S16 = VG_CRC32("int16_t"),
         TypeID_U32 = VG_CRC32("uint32_t"),
         TypeID_S32 = VG_CRC32("int32_t"),
         TypeID_U64 = VG_CRC32("uint64_t"),
@@ -62,8 +58,10 @@ namespace vigil
         // Returns the size of the member
         VG_INLINE vgU32 GetSize() const;
 
+        // Returns true if the member is required
         VG_INLINE vgBool IsRequired() const;
 
+        // Returns true if the member is a constant array
         VG_INLINE vgBool IsConstantArray() const;
 
     private: // Member Variables

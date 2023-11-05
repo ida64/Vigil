@@ -10,6 +10,7 @@
 
 namespace vigil
 {
+    /// TypeID represents a unique ID for a type
     enum TypeID : vgU32
     {
         TypeID_Bool = VG_CRC32("bool"),
@@ -21,13 +22,21 @@ namespace vigil
 
     }; // enum TypeID
 
+    /// ClassMember represents a member of a class
     class ClassMember
     {
     public: // Constructors and Destructor
-        // Constructs a class member with the given ID, name, type ID, type, offset, and size
+        /// Default constructor
+        /// @param [in] id Unique ID of the member, typically the CRC32 of the member name
+        /// @param [in] name Name of the member
+        /// @param [in] typeID Unique ID of the member type, typically the CRC32 of the member type
+        /// @param [in] type Type of the member
+        /// @param [in] offset Offset of the member from the start of the class
+        /// @param [in] size Size of the member
+        /// @param [in] flags Flags of the member
         VG_INLINE ClassMember(vgU32 id, vgString name, vgU32 typeID, vgString type, vgU32 offset, vgU32 size, vgU32 flags = Flags_None);
 
-        // Default destructor
+        /// Default destructor
         virtual ~ClassMember() = default;
 
     public: // Constants
@@ -40,44 +49,60 @@ namespace vigil
         }; // enum Flags
 
     public: // Methods
-        // Returns the unique ID of the member
+        /// Returns the unique ID of the member
+        /// @return [out] m_ID
         VG_INLINE vgU32 GetID() const;
 
-        // Returns the name of the member
+        /// Returns the name of the member
+        /// @return [out] m_Name
         VG_INLINE vgString GetName() const;
 
-        // Returns the unique ID of the member type
+        /// Returns the unique ID of the member type
+        /// @return [out] m_TypeID
         VG_INLINE vgU32 GetTypeID() const;
 
-        // Returns the type of the member
+        /// Returns the type of the member
+        /// @return [out] m_Type
         VG_INLINE vgString GetType() const;
 
-        // Returns the offset of the member from the start of the class
+        /// Returns the offset of the member from the start of the class
+        /// @return [out] m_Offset
         VG_INLINE vgU32 GetOffset() const;
 
-        // Returns the size of the member
+        /// Returns the size of the member
+        /// @return [out] m_Size
         VG_INLINE vgU32 GetSize() const;
 
-        // Returns true if the member is required
+        /// Returns true if the member is required
+        /// @return [out] True if the member is required
         VG_INLINE vgBool IsRequired() const;
 
-        // Returns true if the member is a constant array
+        /// Returns true if the member is a constant array
+        /// @return [out] True if the member is a constant array
         VG_INLINE vgBool IsConstantArray() const;
 
     private: // Member Variables
-        // Unique ID of the member, typically the CRC32 of the member name
+        /// Unique ID of the member
+        /// @note Typically, this is the CRC32 of the member name
         vgU32 m_ID;
-        // Name of the member
+
+        /// Name of the member
         vgString m_Name;
-        // Type ID of the member, typically the CRC32 of the member type
+
+        /// Type ID of the member
+        /// @note Typically, this is the CRC32 of the member type
         vgU32 m_TypeID;
-        // Type of the member
+
+        /// Type of the member
         vgString m_Type;
-        // Offset of the member from the start of the class
+
+        /// Offset of the member from the start of the class
         vgU32 m_Offset;
-        // Size of the member
+
+        /// Size of the member
         vgU32 m_Size;
-        // Flags of the member
+
+        /// Flags of the member
         vgU32 m_Flags;
 
     }; // class ClassMember

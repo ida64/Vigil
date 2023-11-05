@@ -46,20 +46,24 @@ TEST_CASE("Object")
 
 TEST_CASE("JsonReader")
 {
-    nlohmann::json testJson = nlohmann::json::parse("{\"Foo\": true, \"Bar\": 2, \"test\": \"haha get fucked\"}");
+    nlohmann::json testJson = R"(
+    {
+        "Foo": true,
+        "Bar": 2,
+        "Baz": "value"
+    }
+    )"_json;
 
-    std::shared_ptr<TestObject> testObject = std::make_shared<TestObject>();
+    const auto& testObject = std::make_shared<TestObject>();
 
     JsonReader testReader(testJson);
     CHECK_EQ(Object::Deserialize(testObject, testReader), true);
 
     SUBCASE("Read")
     {
-        Class* testClass = testObject->GetClass();
-
         CHECK_EQ(testObject->Foo, true);
-
-        std::cout << testObject->test << std::endl;
+        CHECK_EQ(testObject->Bar, 2);
+        CHECK_EQ(strcmp(testObject->Baz, "value"), 0);
     }
 
 }
@@ -70,13 +74,13 @@ TEST_CASE("Array")
     {
         Array<int> testArray;
         testArray.Resize(10);
-        CHECK(testArray.GetSize() == 10);
+        CHECK_EQ(testArray.GetSize(), 10);
     }
 
     SUBCASE("InitializerList")
     {
         Array<int> testArray2 = { 1, 2, 3, 4, 5 };
-        CHECK(testArray2.GetSize() == 5);
+        CHECK_EQ(testArray2.GetSize(), 5);
     }
 
     SUBCASE("PushBack")
@@ -87,7 +91,7 @@ TEST_CASE("Array")
         testArray.PushBack(3);
         testArray.PushBack(4);
         testArray.PushBack(5);
-        CHECK(testArray.GetSize() == 5);
+        CHECK_EQ(testArray.GetSize(), 5);
     }
 
     SUBCASE("PopBack")
@@ -99,7 +103,7 @@ TEST_CASE("Array")
         testArray.PushBack(4);
         testArray.PushBack(5);
         testArray.PopBack();
-        CHECK(testArray.GetSize() == 4);
+        CHECK_EQ(testArray.GetSize(), 4);
     }
 
     SUBCASE("Clear")
@@ -111,6 +115,6 @@ TEST_CASE("Array")
 
         testArray.Clear();
 
-        CHECK(testArray.GetSize() == 0);
+        CHECK_EQ(testArray.GetSize(), 0);
     }
 }

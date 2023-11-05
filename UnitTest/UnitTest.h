@@ -26,14 +26,14 @@ public: // Methods
 
     vgBool Foo;
     vgU32 Bar;
-    char test[32];
+    char Baz[32];
 
 };
 // +Reflection(ClassName:TestObject)
 const ClassMember kTestObjectClassMembers[] = {
 { VG_CRC32("Foo"),"Foo",VG_CRC32("bool"),"bool",offsetof(TestObject, Foo),sizeof(TestObject),ClassMember::Flags_None },
 { VG_CRC32("Bar"),"Bar",VG_CRC32("uint32_t"),"uint32_t",offsetof(TestObject, Bar),sizeof(TestObject),ClassMember::Flags_None },
-{ VG_CRC32("test"),"test",VG_CRC32("char"),"char",offsetof(TestObject, test),sizeof(TestObject),ClassMember::Flags_ConstantArray },
+{ VG_CRC32("Baz"),"Baz",VG_CRC32("char"),"char",offsetof(TestObject, Baz),sizeof(TestObject),ClassMember::Flags_ConstantArray },
 };
 VG_REFLECTED_IMPL(TestObject)
 // -Reflection(ClassName:TestObject)

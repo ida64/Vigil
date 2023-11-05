@@ -177,12 +177,12 @@ for class_node in filter_node_list_by_node_kind(translation_unit.cursor.get_chil
     with open(target_file, "r") as f:
         lines = f.readlines()
 
-    offset = find_offset_to_reflection(i, target_file)
+    offset = find_offset_to_reflection(class_node, target_file)
     if offset[0] != -1 and offset[1] != -1:
         # remove old lines
         del lines[offset[0]:offset[1] + 1]
         # insert new lines
-        lines.insert(offset[0], generate_class_reflection(i))
+        lines.insert(offset[0], generate_class_reflection(class_node))
     else:
         print(f"Skipping class \"{class_node.spelling}\", no reflection found")
         continue

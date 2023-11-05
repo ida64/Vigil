@@ -15,8 +15,5 @@ cmake-build-debug
 cmake-build-release
 
 
-# Ignore CMAKE files
-*.cmake
-
 # IDEA
 .idea

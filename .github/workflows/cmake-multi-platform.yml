@@ -68,6 +68,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_INSTALL_PREFIX=install -B build -S .
+        -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=conan_provider.cmake
         -S ${{ github.workspace }}
 
     - name: Build

@@ -1,10 +1,8 @@
-
 # VigilSDK
 
 C++ Runtime Reflection, And General-Purpose Development Tool Kit. 
 
 ![Logo](https://i.ibb.co/NtNPcHz/capybara-pfp.png)
-
 
 ## Usage
 
@@ -56,6 +54,16 @@ py .\Reflect.py -file <file> -llvm_path <path to libclang>
 ```
 
 And that's it! You should now be ready to use the reflection api and all it has to offer.
+
+## Build
+VigilSDK is compatible with both Windows and Linux. With **cmake** and **conan**, you can build the project with the following commands:
+```bash
+git clone https://github.com/ZelSoftware/VigilSDK.git
+cd VigilSDK
+./build.sh
+```
+And that should be it! This script builds both Release and Debug Lib/UnitTest.
+
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)

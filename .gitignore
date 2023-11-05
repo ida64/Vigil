@@ -10,6 +10,10 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+#ignore the build directory
+cmake-build-debug
+cmake-build-release
+cmake-build-debug-event-trace
 
 # Ignore CMAKE files
 *.cmake

@@ -15,53 +15,63 @@
 
 namespace vigil
 {
-    // Class describes a class in the object model
+    /// Class stores information about a class and its members
     class Class
     {
     public: // Constructors and Destructor
-        // Constructs a class with the given name, ID, and parent class
+        /// Constructs a class with the given name, ID, and parent class
+        /// @param [in] members Array of class members
+        /// @param [in] nbMembers Number of members in the class
+        /// @param [in] className Name of the class
+        /// @param [in] classID Unique ID of the class
+        /// @param [in] parentClass Pointer to the parent class
         VG_INLINE Class(const ClassMember* members, vgS32 nbMembers, vgString className, vgU32 classID, Class* parentClass);
 
-        // Default destructor
+        /// Default destructor
         virtual ~Class() = default;
 
     public: // Methods
-        // Returns the name of the class
+        /// GetClassName returns the name of the class
+        /// @return [out] m_ClassName
         VG_INLINE vgString GetClassName() const;
 
-        // Returns the unique ID of the class
+        /// GetClassID returns the unique ID of the class
+        /// @return [out] m_ClassID
         VG_INLINE vgU32 GetClassID() const;
 
-        // Returns the parent class
+        /// GetParentClass returns the parent class
+        /// @return [out] m_ParentClass
         VG_INLINE Class* GetParentClass() const;
 
-        // Returns the number of members in the class
+        /// GetNbMembers returns the number of members in the class
+        /// @return [out] m_NbMembers
         VG_INLINE vgS32 GetNbMembers() const;
 
-        // Returns the member at the given index
+        /// GetMember returns the member at the given index
+        /// @param [in] index Index of the member to return
+        /// @return [out] m_Members[index]
         VG_INLINE ClassMember GetMember(vgS32 index) const;
 
-        VG_INLINE Array<ClassMember> GetMembers() const
-        {
-            auto arr = Array<ClassMember>(m_NbMembers);
-            for(vgS32 i = 0; i < m_NbMembers; ++i)
-            {
-                arr[i] = m_Members[i];
-            }
-            return arr;
-        }
+        /// GetMembers returns an array of all members in the class
+        /// @return [out] Array of all members in the class
+        VG_INLINE Array<ClassMember> GetMembers() const;
 
     private: // Member Variables
-        // Array of class members
+        /// Array of class members
         const ClassMember* m_Members;
-        // Number of members in the class
+
+        /// Number of members in the class
         vgS32 m_NbMembers;
-        // Name of the class (e.g. "Class")
+
+        /// Name of the class (e.g. "Class")
         vgString m_ClassName;
-        // Unique ID of the class (e.g. 0x00000000)
-        // Typically, unless explicitly specified, this is the CRC32 of the class name
+
+        /// Unique ID of the class (e.g. 0x00000000)
+        /// @note Typically, unless explicitly specified, this is the CRC32 of the class name
         vgU32 m_ClassID;
-        // Pointer to the parent class
+
+        /// Pointer to the parent class
+        /// @note If the class has no parent, this is nullptr
         Class* m_ParentClass;
 
     }; // class Class
@@ -94,6 +104,16 @@ namespace vigil
     ClassMember Class::GetMember(vgS32 index) const
     {
         return m_Members[index];
+    }
+
+    Array<ClassMember> Class::GetMembers() const
+    {
+        auto arr = Array<ClassMember>(m_NbMembers);
+        for(vgS32 i = 0; i < m_NbMembers; ++i)
+        {
+            arr[i] = m_Members[i];
+        }
+        return arr;
     }
 
 } // namespace vigil

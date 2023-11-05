@@ -14,8 +14,7 @@
 #include <Common/System/Crc32.h>
 #include "Common/ObjectModel/Reflection/ObjectWriter.h"
 
-// This macro is used to implement the GetClass() method for a class
-// Class kTestObjectClass(kTestObjectClassMembers, VG_ARRAY_SIZE(kTestObjectClassMembers), kTestObjectEnums, VG_ARRAY_SIZE(kTestObjectEnums), "TestObject", ComputeCrc32("TestObject", VG_ARRAY_SIZE("TestObject") - 1), nullptr);
+/// VG_REFLECTED_IMPL implements the GetClass method for the given type
 #define VG_REFLECTED_IMPL(Type) \
     Class* Type::GetClass() const \
     { \

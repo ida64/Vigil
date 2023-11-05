@@ -10,12 +10,12 @@ C++ Runtime Reflection, And General-Purpose Development Tool Kit.
 
 **Class Reflection**, in this example it shows a sample Object with Foo and Bar member variables. 
 
-**Note:** When you want to use class reflection, it's important to add the +/- Reflection markers so that the code parser knows where to insert the class info.
+**Note:** When you want to use class reflection, it's important to add the +/- Reflection markers and the `VG_CLASS_REFLECTION` attribute marker so that the code parser knows where to insert the class info.
 ***
 ```cpp
 #include <Common/ObjectModel/Object.h>
 
-class TestObject : public Object
+class VG_CLASS_REFLECTION TestObject : public Object
 {
 public: // Constructors and Destructor
     TestObject() = default;

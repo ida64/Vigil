@@ -46,7 +46,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Setup Conan
+      # You may pin to the exact commit or the version.
+      # uses: jwidauer/setup-conan@37b9cc7ed87bdd5a6f48221536689741496ab84d
+      uses: jwidauer/setup-conan@v1
 
+    - name: Install dependencies
+      run: conan install .
+    
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings

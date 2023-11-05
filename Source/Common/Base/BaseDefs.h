@@ -5,8 +5,6 @@
 #ifndef VIGILSDK_BASEDEFS_H
 #define VIGILSDK_BASEDEFS_H
 
-#include <string>
-
 //
 // Types
 //
@@ -40,9 +38,6 @@ typedef double vgDouble;
 typedef bool vgBool;
 // const char*
 typedef const char* vgString;
-
-template<vgS32 N>
-using vgStringN = char[N];
 
 //
 // Macros

@@ -71,7 +71,7 @@ namespace vigil
         {
             this->Resize(other.m_Size);
 
-            memcpy_s(m_Data, m_Size * sizeof(T), other.m_Data, other.m_Size * sizeof(T));
+            memcpy(m_Data, other.m_Data, other.m_Size * sizeof(T));
 
             return *this;
         }

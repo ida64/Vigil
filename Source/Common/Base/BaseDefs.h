@@ -63,9 +63,6 @@ using vgStringN = char[N];
 // Attributes and Annotations
 //
 
-
-// Annotated class
-#define VG_CLASS_REFLECTION __attribute__((annotate("Reflection")))
-
+#define VG_CLASS_REFLECTION
 
 #endif //VIGILSDK_BASEDEFS_H

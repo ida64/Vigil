@@ -58,6 +58,26 @@ vgBool vigil::JsonReader::Read(Object* object, ClassMember* member)
                      &jsonValue.get_ref<const nlohmann::json::number_integer_t&>(),
                      sizeof(vgS64)) == 0;
         }
+        case TypeID_Char:
+        {
+            if(member->IsConstantArray())
+            {
+                auto str = jsonValue.get_ref<const nlohmann::json::string_t&>();
+                if(str.size() <= member->GetSize())
+                {
+                    return memcpy_s(object->GetPtrTo(member),
+                             member->GetSize(),
+                             str.data(),
+                             str.size()) == 0;
+                }
+                return false;
+            }
+            // Fallthrough, instead assume it's a true:false value
+            return memcpy_s(object->GetPtrTo(member),
+                     member->GetSize(),
+                     &jsonValue.get_ref<const vgBool&>(),
+                     sizeof(vgChar)) == 0;
+        }
     }
 
     return true;

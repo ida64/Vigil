@@ -46,7 +46,7 @@ TEST_CASE("Object")
 
 TEST_CASE("JsonReader")
 {
-    nlohmann::json testJson = nlohmann::json::parse("{\"Foo\": true, \"Bar\": 2}");
+    nlohmann::json testJson = nlohmann::json::parse("{\"Foo\": true, \"Bar\": 2, \"test\": \"h\"}");
 
     std::shared_ptr<TestObject> testObject = std::make_shared<TestObject>();
 
@@ -58,6 +58,8 @@ TEST_CASE("JsonReader")
         Class* testClass = testObject->GetClass();
 
         CHECK_EQ(testObject->Foo, true);
+
+        std::cout << testObject->test << std::endl;
     }
 
 }

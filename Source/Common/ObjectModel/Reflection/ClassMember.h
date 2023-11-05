@@ -13,7 +13,7 @@ namespace vigil
     enum TypeID : vgU32
     {
         TypeID_Bool = VG_CRC32("bool"),
-        TypeID_String = VG_CRC32("const char*"),
+        TypeID_Char = VG_CRC32("char"),
         TypeID_U8 = VG_CRC32("uint8_t"),
         TypeID_S8 = VG_CRC32("int8_t"),
         TypeID_U16 = VG_CRC32("uint16_t"),
@@ -39,6 +39,7 @@ namespace vigil
         {
             Flags_None,
             Flags_Required = 1 << 0,
+            Flags_ConstantArray = 1 << 1,
 
         }; // enum Flags
 
@@ -61,7 +62,9 @@ namespace vigil
         // Returns the size of the member
         VG_INLINE vgU32 GetSize() const;
 
-        VG_INLINE bool IsRequired() const;
+        VG_INLINE vgBool IsRequired() const;
+
+        VG_INLINE vgBool IsConstantArray() const;
 
     private: // Member Variables
         // Unique ID of the member, typically the CRC32 of the member name
@@ -116,9 +119,14 @@ namespace vigil
         return m_Size;
     }
 
-    bool ClassMember::IsRequired() const
+    vgBool ClassMember::IsRequired() const
     {
         return (m_Flags & Flags_Required) != 0;
+    }
+
+    vgBool ClassMember::IsConstantArray() const
+    {
+        return (m_Flags & Flags_ConstantArray) != 0;
     }
 
 } // namespace vigil

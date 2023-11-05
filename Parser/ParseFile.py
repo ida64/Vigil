@@ -31,6 +31,7 @@ print("Temp file: " + tmpFile)
 
 replaceList = [
     ("vgBool", "bool"),
+    ("vgChar", "char"),
     ("vgU8", "uint8_t"),
     ("vgS8", "int8_t"),
     ("vgU16", "uint16_t"),
@@ -39,7 +40,7 @@ replaceList = [
     ("vgS32", "int32_t"),
     ("vgU64", "uint64_t"),
     ("vgS64", "int64_t"),
-    ("vgString", "const char*"),
+    ("vgString", "std::string_view"),
 ]
 
 # replace in temp file
@@ -95,10 +96,16 @@ def generate_class_member_array(
         field_type = field.type.spelling
         field_name = field.spelling
 
+        print(f"Found field: {field_type} {field_name} {field.type.kind}")
+
+        reflection_flags = ReflectedObject.deserialize(field.raw_comment)
+
+        if field.type.kind == clang.cindex.TypeKind.CONSTANTARRAY:
+            reflection_flags.set_option("Flags", "Flags_ConstantArray")
+            field_type = field.type.element_type.spelling
+
         # Inject flags into the result from the comment
-        flags = (ReflectedObject.deserialize(field.raw_comment)
-                 .get_option("Flags", "Flags_None")
-                 .replace("Flags_", "ClassMember::Flags_"))
+        flags = (reflection_flags.get_option("Flags", "Flags_None").replace("Flags_", "ClassMember::Flags_"))
 
         # Append the result
         result.append(
@@ -123,6 +130,9 @@ class ReflectedObject:
 
     def get_option(self, name, default=None):
         return self.options.get(name, default)
+
+    def set_option(self, name, value):
+        self.options[name] = value
 
     @classmethod
     def deserialize(cls, s):
@@ -192,4 +202,4 @@ for class_node in filter_node_list_by_node_kind(translation_unit.cursor.get_chil
 
 import os
 
-os.remove(tmpFile)
+#os.remove(tmpFile)

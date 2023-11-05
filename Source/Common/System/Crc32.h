@@ -7,6 +7,8 @@
 
 #include <Common/Base/BaseDefs.h>
 
+#define VG_CRC32(str) ::vigil::ComputeCrc32(str, VG_ARRAY_SIZE(str) - 1)
+
 namespace vigil
 {
     static constexpr vgU32 kCrc32Table[256] = {

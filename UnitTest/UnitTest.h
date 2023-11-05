@@ -5,13 +5,16 @@
 #ifndef VIGILSDK_UNITTEST_H
 #define VIGILSDK_UNITTEST_H
 
+#include <nlohmann/json.hpp>
+
 #include <memory>
+#include <Common/Container/Array.h>
 
 #include <Common/ObjectModel/Object.h>
+#include <Common/ObjectModel/Reflection/Reader/JsonReader.h>
 
 using namespace vigil;
 
-/** +Reflected(TestObjectReflection.cpp) */
 class TestObject : public Object
 {
 public: // Constructors and Destructor
@@ -21,19 +24,17 @@ public: // Constructors and Destructor
 public: // Methods
     virtual Class* GetClass() const override;
 
-    int Test;
-    char Test2;
-    bool Test3;
-
+    /// Reflection(Flags:Flags_None | Flags_Required)
+    vgBool Foo;
+    vgU32 Bar;
 };
-// +Reflection("TestObject")
+// +Reflection(ClassName:TestObject)
 const ClassMember kTestObjectClassMembers[] = {
-{ ComputeCrc32("Test", VG_ARRAY_SIZE("Test") - 1), "Test", ComputeCrc32("int", VG_ARRAY_SIZE("int") - 1), "int",0,sizeof(int) },
-{ ComputeCrc32("Test2", VG_ARRAY_SIZE("Test2") - 1), "Test2", ComputeCrc32("char", VG_ARRAY_SIZE("char") - 1), "char",0,sizeof(char) },
-{ ComputeCrc32("Test3", VG_ARRAY_SIZE("Test3") - 1), "Test3", ComputeCrc32("bool", VG_ARRAY_SIZE("bool") - 1), "bool",0,sizeof(bool) },
+{ VG_CRC32("Foo"),"Foo",VG_CRC32("bool"),"bool",offsetof(TestObject, Foo),sizeof(TestObject),ClassMember::Flags_None | ClassMember::Flags_Required },
+{ VG_CRC32("Bar"),"Bar",VG_CRC32("uint32_t"),"uint32_t",offsetof(TestObject, Bar),sizeof(TestObject),ClassMember::Flags_None },
 };
 VG_REFLECTED_IMPL(TestObject)
-// -Reflection("TestObject")
+// -Reflection(ClassName:TestObject)
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>

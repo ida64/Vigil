@@ -5,18 +5,20 @@ set(CMAKE_CXX_STANDARD 23)
 
 include_directories(Source)
 
-include_directories(C:/Program Files/LLVM/include)
-link_directories(C:/Program Files/LLVM/lib)
-
 add_library(VigilSDK Source/Common/Base/BaseDefs.h
         Source/Vigil.cpp
         Source/Vigil.h
         Source/Common/System/Crc32.h
         Source/Common/ObjectModel/Object.h
         Source/Common/ObjectModel/Reflection/ClassMember.h
+        Source/Common/Container/Array.h
+        Source/Common/ObjectModel/Reflection/ObjectReader.h
+        Source/Common/ObjectModel/Reflection/Reader/JsonReader.h
+        Source/Common/ObjectModel/Reflection/Reader/JsonReader.cpp
+        Source/Common/ObjectModel/Object.cpp
 )
 
-option(UNIT_TESTING "Enable unit testing" OFF)
-if(UNIT_TESTING)
-    add_subdirectory(UnitTest)
-endif()
+find_package(nlohmann_json)
+target_link_libraries(VigilSDK nlohmann_json::nlohmann_json)
+
+add_subdirectory(UnitTest)

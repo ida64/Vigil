@@ -4,7 +4,9 @@ project(VigilSDKTest)
 set(CMAKE_CXX_STANDARD 23)
 
 find_package(doctest)
+find_package(nlohmann_json)
 
 add_executable(VigilSDKTest UnitTest.cpp
         UnitTest.h)
-target_link_libraries(VigilSDKTest doctest::doctest)
+
+target_link_libraries(VigilSDKTest VigilSDK doctest::doctest nlohmann_json::nlohmann_json)

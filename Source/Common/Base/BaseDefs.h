@@ -13,6 +13,11 @@
 typedef signed char vgChar;
 // Unsigned 8-bit integer
 typedef unsigned char vgUChar;
+// Unsigned 8-bit integer
+typedef unsigned char vgByte;
+typedef unsigned char vgU8;
+// Signed 8-bit integer
+typedef signed char vgS8;
 // Signed 16-bit integer
 typedef signed short vgShort;
 // Unsigned 16-bit integer
@@ -46,5 +51,7 @@ typedef const char* vgString;
 #else
 #define VG_INLINE inline
 #endif
+
+#define VG_FROM_PTR_UNSAFE(Name) Name.get()
 
 #endif //VIGILSDK_BASEDEFS_H

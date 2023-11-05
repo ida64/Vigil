@@ -5,31 +5,42 @@
 #ifndef VIGILSDK_CLASSMEMBER_H
 #define VIGILSDK_CLASSMEMBER_H
 
+#include <Common/System/Crc32.h>
 #include <Common/Base/BaseDefs.h>
-
-#define VG_CLASS_MEMBER_ARRAY(Type) static ClassMember* k##Type##ClassMembers[]
-
-#define VG_CLASS_MEMBER(Type, Name) \
-static inline ClassMember ms_##Name##ClassMember = \
-{                                          \
-    ComputeCrc32(#Name, VG_ARRAY_SIZE(#Name) - 1), \
-    #Name, \
-    ComputeCrc32(#Type, VG_ARRAY_SIZE(#Type) - 1), \
-    #Type, \
-    0, \
-    sizeof(Type) \
-};
 
 namespace vigil
 {
+    enum TypeID : vgU32
+    {
+        TypeID_Bool = VG_CRC32("bool"),
+        TypeID_String = VG_CRC32("const char*"),
+        TypeID_U8 = VG_CRC32("uint8_t"),
+        TypeID_S8 = VG_CRC32("int8_t"),
+        TypeID_U16 = VG_CRC32("uint16_t"),
+        TypeID_S16 = VG_CRC32("int16_t"),
+        TypeID_U32 = VG_CRC32("uint32_t"),
+        TypeID_S32 = VG_CRC32("int32_t"),
+        TypeID_U64 = VG_CRC32("uint64_t"),
+        TypeID_S64 = VG_CRC32("int64_t"),
+
+    }; // enum TypeID
+
     class ClassMember
     {
     public: // Constructors and Destructor
         // Constructs a class member with the given ID, name, type ID, type, offset, and size
-        VG_INLINE ClassMember(vgU32 id, vgString name, vgU32 typeID, vgString type, vgU32 offset, vgU32 size);
+        VG_INLINE ClassMember(vgU32 id, vgString name, vgU32 typeID, vgString type, vgU32 offset, vgU32 size, vgU32 flags = Flags_None);
 
         // Default destructor
         virtual ~ClassMember() = default;
+
+    public: // Constants
+        enum Flags : vgU32
+        {
+            Flags_None,
+            Flags_Required = 1 << 0,
+
+        }; // enum Flags
 
     public: // Methods
         // Returns the unique ID of the member
@@ -50,6 +61,8 @@ namespace vigil
         // Returns the size of the member
         VG_INLINE vgU32 GetSize() const;
 
+        VG_INLINE bool IsRequired() const;
+
     private: // Member Variables
         // Unique ID of the member, typically the CRC32 of the member name
         vgU32 m_ID;
@@ -63,11 +76,13 @@ namespace vigil
         vgU32 m_Offset;
         // Size of the member
         vgU32 m_Size;
+        // Flags of the member
+        vgU32 m_Flags;
 
     }; // class ClassMember
 
-    VG_INLINE ClassMember::ClassMember(vgU32 id, vgString name, vgU32 typeID, vgString type, vgU32 offset, vgU32 size)
-    : m_ID(id), m_Name(name), m_TypeID(typeID), m_Type(type), m_Offset(offset), m_Size(size)
+    VG_INLINE ClassMember::ClassMember(vgU32 id, vgString name, vgU32 typeID, vgString type, vgU32 offset, vgU32 size, vgU32 flags)
+    : m_ID(id), m_Name(name), m_TypeID(typeID), m_Type(type), m_Offset(offset), m_Size(size), m_Flags(flags)
     {
     }
 
@@ -99,6 +114,11 @@ namespace vigil
     vgU32 ClassMember::GetSize() const
     {
         return m_Size;
+    }
+
+    bool ClassMember::IsRequired() const
+    {
+        return (m_Flags & Flags_Required) != 0;
     }
 
 } // namespace vigil

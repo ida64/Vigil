@@ -6,6 +6,7 @@
 #define VIGILSDK_BASECLASS_H
 
 #include <Common/Base/BaseDefs.h>
+#include <Common/Container/Array.h>
 #include <Common/ObjectModel/Reflection/ClassMember.h>
 
 #ifdef GetClassName
@@ -39,6 +40,16 @@ namespace vigil
 
         // Returns the member at the given index
         VG_INLINE ClassMember GetMember(vgS32 index) const;
+
+        VG_INLINE Array<ClassMember> GetMembers() const
+        {
+            auto arr = Array<ClassMember>(m_NbMembers);
+            for(vgS32 i = 0; i < m_NbMembers; ++i)
+            {
+                arr[i] = m_Members[i];
+            }
+            return arr;
+        }
 
     private: // Member Variables
         // Array of class members

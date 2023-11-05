@@ -8,6 +8,8 @@
 #include <Common/ObjectModel/Reflection/Class.h>
 #include <Common/ObjectModel/Reflection/ClassMember.h>
 
+#include <Common/ObjectModel/Reflection/ObjectReader.h>
+
 #include <Common/System/Crc32.h>
 
 // This macro is used to implement the GetClass() method for a class
@@ -20,13 +22,25 @@ Class* Type::GetClass() const \
 
 namespace vigil
 {
+    typedef std::shared_ptr<class Object> ObjectPtr;
+
+
     class Object
     {
     public: // Constructors and Destructor
         Object() = default;
         virtual ~Object() = default;
 
+    public: // Static
+        static bool Deserialize(const ObjectPtr& object, ObjectReader& reader);
+
     public: // Methods
+        void* GetPtrTo(ClassMember* member)
+        {
+            return reinterpret_cast<void*>(reinterpret_cast<vgU8*>(this) + member->GetOffset());
+        }
+
+        // Returns the class of the object
         virtual Class* GetClass() const = 0;
 
     }; // class Object

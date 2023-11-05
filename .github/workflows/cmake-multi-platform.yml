@@ -52,9 +52,6 @@ jobs:
       # uses: jwidauer/setup-conan@37b9cc7ed87bdd5a6f48221536689741496ab84d
       uses: jwidauer/setup-conan@v1
 
-    - name: Install dependencies
-      run: conan install .
-    
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
@@ -70,6 +67,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DCMAKE_INSTALL_PREFIX=install -B build -S .
         -S ${{ github.workspace }}
 
     - name: Build

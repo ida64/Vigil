@@ -12,7 +12,6 @@
 #include <Common/ObjectModel/Reflection/ClassMember.h>
 #include <Common/ObjectModel/Reflection/ClassEnum.h>
 
-#include <iostream>
 #include <map>
 
 #ifdef GetClassName
@@ -32,7 +31,11 @@ namespace vigil
         /// @param [in] className Name of the class
         /// @param [in] classID Unique ID of the class
         /// @param [in] parentClass Pointer to the parent class
-        VG_INLINE Class(const ClassMember* members, vgU32 nbMembers, const FixedArrayBase& enums, vgString className, vgU32 classID, Class* parentClass, void* constructor);
+        VG_INLINE Class(const ClassMember* members, vgU32 nbMembers,
+                        const FixedArrayBase& enums,
+                        vgString className, vgU32 classID,
+                        Class* parentClass,
+                        void* constructor);
 
         /// Default destructor
         virtual ~Class() = default;
@@ -88,7 +91,7 @@ namespace vigil
                            Class* parentClass,
                            void* constructor)
     : m_Constructor(reinterpret_cast<void* (*)()>(constructor)),
-        m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
+    m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
     {
         // Store pointers from the const array.
         Array<ClassMember*>& membersArray = m_Members;

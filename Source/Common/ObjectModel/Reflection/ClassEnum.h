@@ -17,17 +17,11 @@ namespace vigil
     {
     public: // Constructors and Destructor
         /// Default constructor
-        ClassEnum(vgString name, vgU32 id, const EnumValue* values, vgS32 nbValues)
-            : m_EnumName(name)
-            , m_EnumID(id)
-        {
-            // TODO: Add a copy-from to Array
-            m_EnumValues.Resize(nbValues);
-            for(vgS32 i = 0; i < nbValues; ++i)
-            {
-                m_EnumValues[i] = values[i];
-            }
-        }
+        /// @param [in] name Name of the enum
+        /// @param [in] id ID of the enum
+        /// @param [in] values Array of enum values
+        /// @param [in] nbValues Number of values in the array
+        VG_INLINE ClassEnum(vgString name, vgU32 id, const EnumValue* values, vgS32 nbValues);
 
         /// Default destructor
         ~ClassEnum() = default;
@@ -66,6 +60,17 @@ namespace vigil
 
     }; // class ClassEnum
 
+    ClassEnum::ClassEnum(vgString name, vgU32 id, const EnumValue* values, vgS32 nbValues)
+            : m_EnumName(name)
+            , m_EnumID(id)
+    {
+        // TODO: Add a copy-from to Array
+        m_EnumValues.Resize(nbValues);
+        for(vgS32 i = 0; i < nbValues; ++i)
+        {
+            m_EnumValues[i] = values[i];
+        }
+    }
 
     vgString ClassEnum::GetEnumName() const
     {

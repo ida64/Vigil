@@ -21,7 +21,6 @@ namespace vigil
         TypeID_S64 = VG_CRC32("int64_t"),
         TypeID_Float = VG_CRC32("float"),
         TypeID_Double = VG_CRC32("double"),
-        TypeID_ObjectPtr = VG_CRC32("vigil::Object *")
 
     }; // enum TypeID
 
@@ -30,9 +29,9 @@ namespace vigil
     {
     public: // Constructors and Destructor
         /// Default constructor
-        /// @param [in] id Unique ID of the member, typically the CRC32 of the member name
+        /// @param [in] id Unique ID of the member
         /// @param [in] name Name of the member
-        /// @param [in] typeID Unique ID of the member type, typically the CRC32 of the member type
+        /// @param [in] typeID Unique ID of the member type
         /// @param [in] type Type of the member
         /// @param [in] offset Offset of the member from the start of the class
         /// @param [in] size Size of the member

@@ -7,7 +7,6 @@
 import os
 import sys
 import logging
-import re
 
 import argparse
 from pprint import pprint

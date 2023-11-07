@@ -10,11 +10,12 @@
 #include <Common/ObjectModel/Reflection/ClassEnum.h>
 
 #include <Common/ObjectModel/Reflection/ObjectReader.h>
+#include <Common/ObjectModel/Reflection/ObjectWriter.h>
 
 #include <Common/System/Crc32.h>
-#include "Common/ObjectModel/Reflection/ObjectWriter.h"
 
-/// VG_REFLECTED_IMPL implements the GetClass method for the given type
+/// VG_CLASS_REFLECTION is a macro that defines the Constructor, Class, and GetClass method for a reflected class.
+/// @param [in] Type Type of the class to define the reflection for
 #define VG_REFLECTED_IMPL(Type) \
     static Type* s##Type##Constructor() \
     { \

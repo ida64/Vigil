@@ -44,9 +44,16 @@ namespace vigil
     public: // Constants
         enum Flags : vgU32
         {
+            /// No flags
             Flags_None,
+
+            /// Serialization/Deserialization is required for this member
             Flags_Required = 1 << 0,
+
+            /// Member is a constant array
             Flags_ConstantArray = 1 << 1,
+
+            /// Member is a pointer
             Flags_Pointer = 1 << 2,
 
         }; // enum Flags

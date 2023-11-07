@@ -1,11 +1,24 @@
-# VigilSDK
+# Vigil
 
-C++ Runtime Reflection, And General-Purpose Development Tool Kit. 
+C++ Runtime Reflection, With Clang Back-End. 
 
-![Logo](https://i.ibb.co/NtNPcHz/capybara-pfp.png)
+![Logo](https://i.ibb.co/n7K7vP3/vigil-logo.png)
+
+## Features
+- Class Reflection
+	- Constructor
+	- Fields
+	- Enumerations
+	- Arrays
+- JSON Serialization & Deserialization
+- Easy To Use Marker Design
+
+## Builds and Platform Support
+- Microsoft Visual C++ (MSVC) on Windows  [✔️]
+- GNU Compiler Collection (GCC) on Ubuntu [✔️]
+- Clang on Ubuntu                         [✔️]
 
 [![Multi-Platform Build](https://github.com/ZelSoftware/VigilSDK/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=master)](https://github.com/ZelSoftware/VigilSDK/actions/workflows/cmake-multi-platform.yml)
-
 ## Usage
 
 **Class Reflection**, in this example it shows a sample Object with Foo and Bar member variables. 

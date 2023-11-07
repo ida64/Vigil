@@ -4,6 +4,8 @@ C++ Runtime Reflection, And General-Purpose Development Tool Kit.
 
 ![Logo](https://i.ibb.co/NtNPcHz/capybara-pfp.png)
 
+[![Multi-Platform Build](https://github.com/ZelSoftware/VigilSDK/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=master)](https://github.com/ZelSoftware/VigilSDK/actions/workflows/cmake-multi-platform.yml)
+
 ## Usage
 
 **Class Reflection**, in this example it shows a sample Object with Foo and Bar member variables. 

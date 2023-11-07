@@ -146,9 +146,20 @@ namespace vigil
             Resize(0);
         }
 
+        VG_INLINE void Copy(T* data, vgU32 size)
+        {
+            Resize(size);
+            std::copy(data, data + size, m_Data);
+        }
+
     private: // Member Variables
+        /// Allocator for the array
         Allocator m_Allocator;
+
+        /// Pointer to the data
         T* m_Data;
+
+        /// Size of the array
         vgU32 m_Size;
 
     }; // class Array

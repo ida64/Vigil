@@ -26,7 +26,7 @@ bool vigil::Object::Deserialize(const ObjectPtr& object, ObjectReader& reader)
     return true;
 }
 
-bool vigil::Object::Serialize(const vigil::ObjectPtr& object, vigil::ObjectWriter& writer)
+bool vigil::Object::Serialize(const ObjectPtr& object, ObjectWriter& writer)
 {
     Class* currentClass = object->GetClass();
     while (currentClass != nullptr)

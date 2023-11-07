@@ -62,6 +62,45 @@ vgBool vigil::JsonWriter::Write(Object* object, ClassMember* member)
         {
             return ::Write<vgFloat>(object, member, m_JsonDoc);
         }
+        default:
+        {
+            // Pointers require additional processing
+            if(member->IsPointer())
+            {
+                if(member->IsConstantArray())
+                {
+                    // TODO: Implement constant array pointers
+                    return false;
+                }
+
+                auto* ptr = reinterpret_cast<Object**>(object->GetPtrTo(member));
+                if(!ptr)
+                {
+                    return false;
+                }
+
+                // Skip object pointers that haven't been initialized.
+                if(!*ptr)
+                {
+                    return false;
+                }
+
+                // Refer to JsonReader::Read default case for explanation.
+                const auto& objectPtr = ObjectPtr(*ptr, [](Object*){});
+
+                // Create a new writer for the object, and serialize it.
+                JsonWriter writer;
+                if(!Object::Serialize(objectPtr, writer))
+                {
+                    return false;
+                }
+
+                // Add the serialized object to the json document.
+                m_JsonDoc[member->GetName()] = writer.GetJson();
+
+                return true;
+            }
+        }
     }
     return false;
 }

@@ -58,6 +58,7 @@ typedef const char* vgString;
 // Attributes and Annotations
 //
 
+
 #define VG_CLASS_REFLECTION
 
 #endif //VIGILSDK_BASEDEFS_H

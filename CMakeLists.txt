@@ -22,6 +22,8 @@ add_library(VigilSDK Source/Common/Base/BaseDefs.h
         Source/Common/ObjectModel/Reflection/ObjectWriter.h
         Source/Common/ObjectModel/Reflection/Writer/JsonWriter.cpp
         Source/Common/ObjectModel/Reflection/Writer/JsonWriter.h
+        Source/Common/ObjectModel/Reflection/Class.cpp
+        Source/Common/Container/SimplePair.h
 )
 
 find_package(nlohmann_json)

@@ -21,6 +21,7 @@ namespace vigil
         TypeID_S64 = VG_CRC32("int64_t"),
         TypeID_Float = VG_CRC32("float"),
         TypeID_Double = VG_CRC32("double"),
+        TypeID_ObjectPtr = VG_CRC32("vigil::Object *")
 
     }; // enum TypeID
 
@@ -47,6 +48,7 @@ namespace vigil
             Flags_None,
             Flags_Required = 1 << 0,
             Flags_ConstantArray = 1 << 1,
+            Flags_Pointer = 1 << 2,
 
         }; // enum Flags
 
@@ -82,6 +84,10 @@ namespace vigil
         /// Returns true if the member is a constant array
         /// @return [out] True if the member is a constant array
         VG_INLINE vgBool IsConstantArray() const;
+
+        /// Returns true if the member is an object pointer
+        /// @return [out] True if the member is an object pointer
+        VG_INLINE vgBool IsPointer() const;
 
     private: // Member Variables
         /// Unique ID of the member
@@ -152,6 +158,11 @@ namespace vigil
     vgBool ClassMember::IsConstantArray() const
     {
         return (m_Flags & Flags_ConstantArray) != 0;
+    }
+
+    vgBool ClassMember::IsPointer() const
+    {
+        return (m_Flags & Flags_Pointer) != 0;
     }
 
 } // namespace vigil

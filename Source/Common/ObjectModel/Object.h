@@ -16,16 +16,22 @@
 
 /// VG_REFLECTED_IMPL implements the GetClass method for the given type
 #define VG_REFLECTED_IMPL(Type) \
-    Class* Type::GetClass() const \
+    static Type* s##Type##Constructor() \
     { \
-        static Class kClass( \
+        return new Type(); \
+    } \
+    static inline Class k##Type##Class( \
             k##Type##ClassMembers, \
             VG_ARRAY_SIZE(k##Type##ClassMembers), \
             k##Type##Enums.GetBase(), \
             #Type, \
             VG_CRC32(#Type), \
-            nullptr); \
-        return &kClass; \
+            nullptr, \
+            (void*)s##Type##Constructor \
+            ); \
+    Class* Type::GetClass() const \
+    { \
+        return &k##Type##Class; \
     }
 
 namespace vigil

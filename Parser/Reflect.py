@@ -22,7 +22,8 @@ parser = argparse.ArgumentParser(
     description='Generates reflection code for classes')
 
 parser.add_argument('-file', metavar='file', type=str, nargs='+', help='file to parse')
-parser.add_argument('-v', '--cpp_version', metavar='cpp_version', type=str, nargs='?', default='c++17',
+parser.add_argument('-src_dir', metavar='src', type=str, nargs='?', help='Source/ directory of VigilSDK')
+parser.add_argument('-v', '--cpp_version', metavar='cpp_version', type=str, nargs='?', default='c++20',
                     help='C++ version to use')
 parser.add_argument('-llvm_path', metavar='llvm_path', type=str, nargs='?', help='Path to libclang')
 parser.add_argument('-save_tmp', metavar='save_tmp', type=bool, nargs='?', default=False,
@@ -36,6 +37,10 @@ if args.file is None:
 
 if args.llvm_path is None:
     logging.error("No llvm path specified, view help with --help")
+    sys.exit(1)
+
+if args.src_dir is None:
+    logging.error("No source directory specified, view help with --help")
     sys.exit(1)
 
 config = clang.cindex.Config()
@@ -106,9 +111,10 @@ with open(tmpFile, "r") as f:
         f2.writelines(lines)
 
 index = clang.cindex.Index.create()
-translation_unit = index.parse(tmpFile, args=["-x", "c++", "-std=c++17"])
 
-
+# get parent directory
+translation_unit = index.parse(tmpFile, args=["-x", "c++", "-std=" + args.cpp_version,
+                                              "-I" + args.src_dir])
 def filter_node_list_by_node_kind(nodes: typing.Iterable[clang.cindex.Cursor], kinds: list) -> typing.Iterable[
     clang.cindex.Cursor]:
     result = []
@@ -150,6 +156,15 @@ def generate_class_member_array(class_cursor: clang.cindex.Cursor):
             reflection_flags.set_option("Flags", "Flags_ConstantArray")
             field_type = field.type.element_type.spelling
             logging.info(f"Found constant array \"{field_name}\" of type \"{field_type}\" (Line {field.location.line})")
+
+        if field.type.kind == clang.cindex.TypeKind.POINTER:
+            if is_class_reflected(field.type.get_pointee().get_declaration()):
+                print(f"{field_name} is a pointer to a reflected class")
+                reflection_flags.set_option("Flags", "Flags_Pointer")
+
+                # remove the * from the type name
+                field_type = field.type.get_pointee().get_declaration().spelling
+
 
         flags = (reflection_flags.get_option("Flags", "Flags_None").replace("Flags_", "ClassMember::Flags_"))
         logging.info(f"Found field \"{field_name}\" of type \"{field_type}\" (Line {field.location.line})"
@@ -206,10 +221,14 @@ def generate_enums_array(class_cursor: clang.cindex.Cursor):
                 f"    {{ \"{value_name}\", VG_CRC32(\"{value_name}\"), {enum_value.enum_value} }}")
 
         result.append(
-            f"const vigil::EnumValue k{class_cursor.spelling}{enum_name}Values[] = {{\n" + ",\n".join(value_arrays) + "\n};\n")
+            f"const vigil::EnumValue k{class_cursor.spelling}{enum_name}Values[] ="
+            f" {{\n" + ",\n".join(value_arrays) + "\n};\n")
 
         result.append(
-            f"const vigil::ClassEnum k{class_cursor.spelling}{enum_name} = {{ \"{enum_name}\", VG_CRC32(\"{enum_name}\"), k{class_cursor.spelling}{enum_name}Values, VG_ARRAY_SIZE(k{class_cursor.spelling}{enum_name}Values) }};")
+            f"const vigil::ClassEnum k{class_cursor.spelling}{enum_name} = {{ \"{enum_name}\","
+            f" VG_CRC32(\"{enum_name}\"),"
+            f"k{class_cursor.spelling}{enum_name}Values,"
+            f" VG_ARRAY_SIZE(k{class_cursor.spelling}{enum_name}Values) }};")
 
         value_arrays.clear()
         enum_names.append(f"k{class_cursor.spelling}{enum_name}")
@@ -218,6 +237,20 @@ def generate_enums_array(class_cursor: clang.cindex.Cursor):
 
 
 def generate_class_reflection(class_node):
+    # get default constructor
+    default_constructor = None
+    for constructor in filter_node_list_by_node_kind(class_node.get_children(),
+                                                        [clang.cindex.CursorKind.CONSTRUCTOR]):
+            if constructor.is_default_constructor():
+                default_constructor = constructor
+                break
+
+    if default_constructor is None:
+        logging.warning(f"Could not find default constructor for class \"{class_node.spelling}\"")
+        return "// ERROR: A default constructor is required for reflection, i.e. \"ClassName() = default;\""
+
+    logging.info(f"Found default constructor for class \"{class_node.spelling}\" (Line {default_constructor.location.line})")
+
     inplace_members = generate_class_member_array(class_node)
 
     reflected_object = ReflectedObject({"ClassName": class_node.spelling})

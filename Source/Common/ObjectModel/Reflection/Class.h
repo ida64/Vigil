@@ -12,13 +12,15 @@
 #include <Common/ObjectModel/Reflection/ClassMember.h>
 #include <Common/ObjectModel/Reflection/ClassEnum.h>
 
+#include <iostream>
+#include <map>
+
 #ifdef GetClassName
 #undef GetClassName
 #endif
 
 namespace vigil
 {
-
     /// Class stores information about a class and its members
     class Class
     {
@@ -30,10 +32,13 @@ namespace vigil
         /// @param [in] className Name of the class
         /// @param [in] classID Unique ID of the class
         /// @param [in] parentClass Pointer to the parent class
-        VG_INLINE Class(const ClassMember* members, vgU32 nbMembers, const FixedArrayBase& enums, vgString className, vgU32 classID, Class* parentClass);
+        VG_INLINE Class(const ClassMember* members, vgU32 nbMembers, const FixedArrayBase& enums, vgString className, vgU32 classID, Class* parentClass, void* constructor);
 
         /// Default destructor
         virtual ~Class() = default;
+
+    public: // Static
+        static inline std::map<vgU32, Class*> ms_IDToClassMap;
 
     public: // Methods
         /// GetClassName returns the name of the class
@@ -43,6 +48,8 @@ namespace vigil
         /// GetClassID returns the unique ID of the class
         /// @return [out] m_ClassID
         VG_INLINE vgU32 GetClassID() const;
+
+        VG_INLINE void* Create() const;
 
         /// GetParentClass returns the parent class
         /// @return [out] m_ParentClass
@@ -66,20 +73,37 @@ namespace vigil
         /// @note Typically, unless explicitly specified, this is the CRC32 of the class name
         vgU32 m_ClassID;
 
+        /// Pointer to the constructor of the class
+        void*(*m_Constructor)();
+
         /// Pointer to the parent class
         /// @note If the class has no parent, this is nullptr
         Class* m_ParentClass;
 
     }; // class Class
 
-    VG_INLINE Class::Class(const ClassMember* members, vgU32 nbMembers, const FixedArrayBase& enums, vgString className, vgU32 classID, Class* parentClass)
-    : m_Members(nbMembers), m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
+    VG_INLINE Class::Class(const ClassMember* members, vgU32 nbMembers,
+                           const FixedArrayBase& enums,
+                           vgString className, vgU32 classID,
+                           Class* parentClass,
+                           void* constructor)
+    : m_Constructor(reinterpret_cast<void* (*)()>(constructor)),
+        m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
     {
-        // TODO: Add a copy-from to Array
-        for (vgU32 i = 0; i < nbMembers; ++i)
-            m_Members[i] = const_cast<ClassMember*>(&members[i]);
+        // Store pointers from the const array.
+        Array<ClassMember*>& membersArray = m_Members;
+        membersArray.Resize(nbMembers);
+
+        for(vgS32 idx = 0; auto& ref : membersArray)
+        {
+            ref = const_cast<ClassMember*>(&members[idx]);
+            ++idx;
+        }
 
         m_Enums = enums;
+        ms_IDToClassMap[classID] = this;
+
+        std::cout << "Registered class " << className << " with ID " << classID << "\n";
     }
 
     vgString Class::GetClassName() const
@@ -101,6 +125,16 @@ namespace vigil
     {
         return m_Members;
     }
+
+    void* Class::Create() const
+    {
+        return m_Constructor();
+    }
+
+    /// GetClassByID returns the class with the given ID
+    /// @param [in] id ID of the class to get
+    /// @return Class* Pointer to the class with the given ID
+    Class* GetClassByID(vgU32 id);
 
 } // namespace vigil
 

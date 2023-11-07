@@ -19,7 +19,28 @@ C++ Runtime Reflection, With Clang Back-End.
 - Clang on Ubuntu                         [✔️]
 
 [![Multi-Platform Build](https://github.com/ZelSoftware/VigilSDK/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=master)](https://github.com/ZelSoftware/VigilSDK/actions/workflows/cmake-multi-platform.yml)
-## Usage
+
+**General Usage**, here are two samples from [UnitTest/UnitTest.cpp](https://github.com/ZelSoftware/Vigil/blob/master/UnitTest/UnitTest.cpp) that shows the `GetValueOf` and `SetValueOf` functions in action.
+```cpp
+auto* objectA = testObject->GetValueOf<TestObject2*>("A");  
+CHECK_NE(objectA, nullptr);  
+  
+CHECK_EQ(objectA->GetValueOf<vgBool>("Foo"), true);  
+CHECK_EQ(objectA->GetValueOf<vgFloat>("Bar"), 3.0);  
+CHECK_EQ(objectA->GetValueOf<vgS32>("Baz"), 42);
+```
+
+```cpp
+objectA->SetValueOf<vgBool>("Foo", false);  
+objectA->SetValueOf<vgFloat>("Bar", 2.0);  
+objectA->SetValueOf<vgS32>("Baz", 22);
+
+CHECK_EQ(objectA->GetValueOf<vgBool>("Foo"), false);  
+CHECK_EQ(objectA->GetValueOf<vgFloat>("Bar"), 2.0);  
+CHECK_EQ(objectA->GetValueOf<vgS32>("Baz"), 22);
+```
+
+## Getting Started
 
 **Class Reflection**, in this example it shows a sample Object with Foo and Bar member variables. 
 
@@ -35,6 +56,7 @@ public: // Constructors and Destructor
     virtual ~TestObject() = default;
 
 public: // Methods
+    // You must declare this virtual function in order to use reflection.
     virtual Class* GetClass() const override;
 
     vgBool Foo;

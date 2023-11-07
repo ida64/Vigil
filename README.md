@@ -45,6 +45,9 @@ CHECK_EQ(objectA->GetValueOf<vgS32>("Baz"), 22);
 **Class Reflection**, in this example it shows a sample Object with Foo and Bar member variables. 
 
 **Note:** When you want to use class reflection, it's important to add the +/- Reflection markers and the `VG_CLASS_REFLECTION` attribute marker so that the code parser knows where to insert the class info.
+
+
+Additionally, the access specifier used with fields is taken into account when generating the relevant class info, **non-public member variables will be ignored.**
 ***
 ```cpp
 #include <Common/ObjectModel/Object.h>
@@ -59,10 +62,14 @@ public: // Methods
     // You must declare this virtual function in order to use reflection.
     virtual Class* GetClass() const override;
 
+public: // Reflected Members
     vgBool Foo;
     vgU32 Bar;
 
-};
+private: // Non-Reflected Members
+    vgBool Baz;
+
+}; // class TestObject
 
 // +Reflection(ClassName:TestObject)
 // -Reflection(ClassName:TestObject)

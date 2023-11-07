@@ -67,12 +67,63 @@ namespace vigil
         /// @return void* Pointer to the member
         void* GetPtrTo(ClassMember* member);
 
+        /// GetValueOf returns the value of the member with the given name
+        /// @param [in] name Name of the member to get the value of
+        /// @return T Value of the member
+        template<typename T>
+        T GetValueOf(const vgString& name) const;
+
+        /// SetValueOf sets the value of the member with the given name
+        /// @param [in] name Name of the member to set the value of
+        /// @param [in] value Value to set the member to
+        template<typename T>
+        void SetValueOf(const vgString& name, const T& value);
+
         /// GetClass returns the class of the object
         /// @return Class* Pointer to the class of the object
         /// @note This method must be implemented by the derived class, see VG_REFLECTED_IMPL
         virtual Class* GetClass() const = 0;
 
     }; // class Object
+
+    // TODO(GetValueOf, SetValueOf): Add proper recursive search
+
+    template <typename T>
+    T vigil::Object::GetValueOf(vgString const& name) const
+    {
+        Class* currentClass = GetClass();
+        while(currentClass != nullptr)
+        {
+            for(auto& classMember : currentClass->GetMembers())
+            {
+                if(classMember->GetName() == name)
+                {
+                    return *reinterpret_cast<T*>(reinterpret_cast<vgU8*>(const_cast<Object*>(this)) + classMember->GetOffset());
+                }
+            }
+            currentClass = currentClass->GetParentClass();
+        }
+
+        return T();
+    }
+
+    template <typename T>
+    void vigil::Object::SetValueOf(vgString const& name, const T& value)
+    {
+        Class* currentClass = GetClass();
+        while(currentClass != nullptr)
+        {
+            for(auto& classMember : currentClass->GetMembers())
+            {
+                if(classMember->GetName() == name)
+                {
+                    *reinterpret_cast<T*>(reinterpret_cast<vgU8*>(const_cast<Object*>(this)) + classMember->GetOffset()) = value;
+                    return;
+                }
+            }
+            currentClass = currentClass->GetParentClass();
+        }
+    }
 
 } // namespace vigil
 

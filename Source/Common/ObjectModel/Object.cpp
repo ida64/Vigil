@@ -51,3 +51,4 @@ void* vigil::Object::GetPtrTo(vigil::ClassMember* member)
 {
     return reinterpret_cast<vgByte*>(this) + member->GetOffset();
 }
+

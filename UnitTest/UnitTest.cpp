@@ -41,6 +41,30 @@ TEST_CASE("JsonReader")
         CHECK_EQ(testObject->B->Bar, 2.0);
         CHECK_EQ(testObject->B->Baz, 22);
     }
+
+    SUBCASE("GetValueOf")
+    {
+        auto* objectA = testObject->GetValueOf<TestObject2*>("A");
+        CHECK_NE(objectA, nullptr);
+
+        CHECK_EQ(objectA->GetValueOf<vgBool>("Foo"), true);
+        CHECK_EQ(objectA->GetValueOf<vgFloat>("Bar"), 3.0);
+        CHECK_EQ(objectA->GetValueOf<vgS32>("Baz"), 42);
+    }
+
+    SUBCASE("SetValueOf")
+    {
+        auto* objectA = testObject->GetValueOf<TestObject2*>("A");
+        CHECK_NE(objectA, nullptr);
+
+        objectA->SetValueOf<vgBool>("Foo", false);
+        objectA->SetValueOf<vgFloat>("Bar", 2.0);
+        objectA->SetValueOf<vgS32>("Baz", 22);
+
+        CHECK_EQ(objectA->GetValueOf<vgBool>("Foo"), false);
+        CHECK_EQ(objectA->GetValueOf<vgFloat>("Bar"), 2.0);
+        CHECK_EQ(objectA->GetValueOf<vgS32>("Baz"), 22);
+    }
 }
 
 TEST_CASE("JsonWriter")

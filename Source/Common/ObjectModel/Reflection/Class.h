@@ -102,8 +102,6 @@ namespace vigil
 
         m_Enums = enums;
         ms_IDToClassMap[classID] = this;
-
-        std::cout << "Registered class " << className << " with ID " << classID << "\n";
     }
 
     vgString Class::GetClassName() const

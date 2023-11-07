@@ -32,6 +32,14 @@ public: // Methods
 };
 
 // +Reflection(ClassName:TestObject2)
+const vigil::ClassMember kTestObject2ClassMembers[] = {
+    { VG_CRC32("Foo"),"Foo",VG_CRC32("bool"),"bool",offsetof(TestObject2, Foo),sizeof(bool),ClassMember::Flags_None },
+    { VG_CRC32("Bar"),"Bar",VG_CRC32("float"),"float",offsetof(TestObject2, Bar),sizeof(float),ClassMember::Flags_None },
+    { VG_CRC32("Baz"),"Baz",VG_CRC32("int32_t"),"int32_t",offsetof(TestObject2, Baz),sizeof(int32_t),ClassMember::Flags_None },
+};
+
+const vigil::FixedArray<const ClassEnum*, 0> kTestObject2Enums = {  };
+VG_REFLECTED_IMPL(TestObject2);
 // -Reflection(ClassName:TestObject2)
 
 class VG_CLASS_REFLECTION TestObject : public Object
@@ -48,6 +56,13 @@ public: // Methods
 
 };
 // +Reflection(ClassName:TestObject)
+const vigil::ClassMember kTestObjectClassMembers[] = {
+    { VG_CRC32("A"),"A",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, A),sizeof(TestObject2 *),ClassMember::Flags_Pointer },
+    { VG_CRC32("B"),"B",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, B),sizeof(TestObject2 *),ClassMember::Flags_Pointer },
+};
+
+const vigil::FixedArray<const ClassEnum*, 0> kTestObjectEnums = {  };
+VG_REFLECTED_IMPL(TestObject);
 // -Reflection(ClassName:TestObject)
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN

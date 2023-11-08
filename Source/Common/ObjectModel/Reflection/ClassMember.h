@@ -56,6 +56,9 @@ namespace vigil
             /// Member is a pointer
             Flags_Pointer = 1 << 2,
 
+            /// Flags_SafeField is a shared_ptr field
+            Flags_SafeField = 1 << 3,
+
         }; // enum Flags
 
     public: // Methods
@@ -94,6 +97,10 @@ namespace vigil
         /// Returns true if the member is an object pointer
         /// @return [out] True if the member is an object pointer
         VG_INLINE vgBool IsPointer() const;
+
+        /// Returns true if the member is a safe field
+        /// @return [out] True if the member is a safe field
+        VG_INLINE vgBool IsSafeField() const;
 
     private: // Member Variables
         /// Unique ID of the member
@@ -169,6 +176,11 @@ namespace vigil
     vgBool ClassMember::IsPointer() const
     {
         return (m_Flags & Flags_Pointer) != 0;
+    }
+
+    vgBool ClassMember::IsSafeField() const
+    {
+        return (m_Flags & Flags_SafeField) != 0;
     }
 
 } // namespace vigil

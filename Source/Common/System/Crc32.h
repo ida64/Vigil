@@ -77,6 +77,18 @@ namespace vigil
         return vgU32(crc ^ 0xFFFFFFFF);
     }
 
+    VG_INLINE vgU32 ComputeStringCRC32(vgString buffer) noexcept
+    {
+        vgU32 size = strlen(buffer);
+
+        vgU32 crc = 0xFFFFFFFF;
+        for (vgS32 i = 0; i < size; ++i)
+        {
+            crc = kCrc32Table[(crc ^ buffer[i]) & 0xFF] ^ (crc >> 8);
+        }
+        return vgU32(crc ^ 0xFFFFFFFF);
+    }
+
 } // namespace vigil
 
 #endif //VIGILSDK_CRC32_H

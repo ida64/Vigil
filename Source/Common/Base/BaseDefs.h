@@ -43,7 +43,8 @@ typedef const char* vgString;
 // Markers
 //
 
-
 #define VG_CLASS_REFLECTION
+
+#define VG_SAFE_FIELD
 
 #endif //VIGILSDK_BASEDEFS_H

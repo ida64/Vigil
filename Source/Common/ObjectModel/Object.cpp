@@ -47,8 +47,4 @@ bool vigil::Object::Serialize(const ObjectPtr& object, ObjectWriter& writer)
     return true;
 }
 
-void* vigil::Object::GetPtrTo(vigil::ClassMember* member)
-{
-    return reinterpret_cast<vgByte*>(this) + member->GetOffset();
-}
 

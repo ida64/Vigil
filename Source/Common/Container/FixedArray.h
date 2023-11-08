@@ -6,6 +6,7 @@
 #define VIGILSDK_FIXEDARRAY_H
 
 #include <Common/Base/BaseDefs.h>
+#include <array>
 
 namespace vigil
 {
@@ -180,7 +181,6 @@ namespace vigil
         {
             return m_Data + m_Base.m_Size;
         }
-
 
     private: // Member Variables
         FixedArrayBase m_Base;

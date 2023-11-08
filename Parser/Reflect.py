@@ -71,11 +71,14 @@ replaceList = [
     ("vgS64", "int64_t"),
     ("vgFloat", "float"),
     ("VG_CLASS_REFLECTION", "__attribute__((annotate(\"VG_CLASS_REFLECTION\")))"),
+    ("VG_SAFE_FIELD", "__attribute__((annotate(\"VG_SAFE_FIELD\")))"),
 ]
+
 
 class ReflectedObject:
     def __init__(self, options):
         self.options = options
+        self.flags = []
 
     def serialize(self):
         options_str = ', '.join(f'{name}:{value}' for name, value in self.options.items())
@@ -84,8 +87,11 @@ class ReflectedObject:
     def get_option(self, name, default=None):
         return self.options.get(name, default)
 
-    def set_option(self, name, value):
-        self.options[name] = value
+    def add_flag(self, name):
+        self.flags.append(name)
+
+    def get_flags(self):
+        return self.flags
 
     @classmethod
     def deserialize(cls, s):
@@ -99,6 +105,7 @@ class ReflectedObject:
         options_str = s[start:end]
         options = dict(option.split(":") for option in options_str.split(", "))
         return cls(options)
+
 
 # replace in temp file
 with open(tmpFile, "r") as f:
@@ -114,6 +121,8 @@ index = clang.cindex.Index.create()
 # get parent directory
 translation_unit = index.parse(tmpFile, args=["-x", "c++", "-std=" + args.cpp_version,
                                               "-I" + args.src_dir])
+
+
 def filter_node_list_by_node_kind(nodes: typing.Iterable[clang.cindex.Cursor], kinds: list) -> typing.Iterable[
     clang.cindex.Cursor]:
     result = []
@@ -139,6 +148,20 @@ def find_all_exposed_fields(cursor: clang.cindex.Cursor):
     return result
 
 
+def find_all_exposed_methods(cursor: clang.cindex.Cursor):
+    result = []
+
+    method_declarations = filter_node_list_by_node_kind(cursor.get_children(), [clang.cindex.CursorKind.CXX_METHOD])
+
+    for method_declaration in method_declarations:
+        if method_declaration.access_specifier != clang.cindex.AccessSpecifier.PUBLIC:
+            continue
+
+        result.append(method_declaration)
+
+    return result
+
+
 # Generate class member array in the form of:
 # const ClassMember k<ClassName>ClassMembers[] = {...
 def generate_class_member_array(class_cursor: clang.cindex.Cursor):
@@ -152,25 +175,43 @@ def generate_class_member_array(class_cursor: clang.cindex.Cursor):
         reflection_flags = ReflectedObject.deserialize(field.raw_comment)
 
         if field.type.kind == clang.cindex.TypeKind.CONSTANTARRAY:
-            reflection_flags.set_option("Flags", "Flags_ConstantArray")
+            reflection_flags.add_flag("Flags_ConstantArray")
+
             field_type = field.type.element_type.spelling
+
+            if field.type.element_type.kind == clang.cindex.TypeKind.POINTER:
+                reflection_flags.add_flag("Flags_Pointer")
+                # remove the * from the type name
+                field_type = field.type.element_type.get_pointee().get_declaration().spelling
+
             logging.info(f"Found constant array \"{field_name}\" of type \"{field_type}\" (Line {field.location.line})")
 
         if field.type.kind == clang.cindex.TypeKind.POINTER:
             if is_class_reflected(field.type.get_pointee().get_declaration()):
                 print(f"{field_name} is a pointer to a reflected class")
-                reflection_flags.set_option("Flags", "Flags_Pointer")
-
+                reflection_flags.add_flag("Flags_Pointer")
                 # remove the * from the type name
                 field_type = field.type.get_pointee().get_declaration().spelling
 
+        if is_safe_field(field):
+            print(f"{field_name} is a safe field {field.type.kind}")
+            reflection_flags.add_flag("Flags_Pointer")
+            reflection_flags.add_flag("Flags_SafeField")
 
-        flags = (reflection_flags.get_option("Flags", "Flags_None").replace("Flags_", "ClassMember::Flags_"))
+            # Get the actual typename of the shared_ptr field
+
+            if field.type.kind == clang.cindex.TypeKind.ELABORATED:
+                field_type = field.type.get_template_argument_type(0).spelling
+
+            if field.type.kind == clang.cindex.TypeKind.CONSTANTARRAY:
+                field_type = field.type.element_type.get_template_argument_type(0).spelling
+
+        flags = " | ".join(reflection_flags.get_flags()).replace("Flags_", "vigil::ClassMember::Flags_")
         logging.info(f"Found field \"{field_name}\" of type \"{field_type}\" (Line {field.location.line})"
                      f" with flags \"{flags}\"")
 
         result.append(
-            f"    {{ VG_CRC32(\"{field_name}\"),"  # m_ID
+            f"{{ VG_CRC32(\"{field_name}\"),"  # m_ID
             f"\"{field_name}\","  # m_Name
             f"VG_CRC32(\"{field_type}\"),"  # m_TypeID
             f"\"{field_type}\","  # m_Type
@@ -179,6 +220,26 @@ def generate_class_member_array(class_cursor: clang.cindex.Cursor):
             f"{flags} }},\n")  # m_Flags
 
     return f"const vigil::ClassMember k{class_cursor.spelling}ClassMembers[] = {{\n" + "".join(result) + "};"
+
+
+def generate_static_methods_array(class_cursor: clang.cindex.Cursor):
+    result = []
+
+    methods = find_all_exposed_methods(class_cursor)
+    for method in methods:
+        if method.kind == clang.cindex.CursorKind.CXX_METHOD:
+            # Generate reflection for virtual methods only.
+            if method.is_static_method():
+                result.append(
+                    f"{{ \"{method.spelling}\","
+                    f"VG_CRC32(\"{method.spelling}\"),"
+                    f"(void*){class_cursor.spelling}::{method.spelling},"
+                    f"MethodType_Static }},\n")
+            elif method.is_virtual_method():
+                # TODO: Implement virtual method reflection.
+                pass
+
+    return f"const vigil::ClassMethod k{class_cursor.spelling}StaticMethods[] = {{\n" + "".join(result) + "};"
 
 
 def find_all_exposed_enums(cursor: clang.cindex.Cursor):
@@ -193,6 +254,7 @@ def find_all_exposed_enums(cursor: clang.cindex.Cursor):
         result.append(enum_declaration)
 
     return result
+
 
 # Generate class member array in the form of:
 # const ClassEnum k<ClassName>Enums[] = {
@@ -239,16 +301,19 @@ def generate_class_reflection(class_node):
     # get default constructor
     default_constructor = None
     for constructor in filter_node_list_by_node_kind(class_node.get_children(),
-                                                        [clang.cindex.CursorKind.CONSTRUCTOR]):
-            if constructor.is_default_constructor():
-                default_constructor = constructor
-                break
+                                                     [clang.cindex.CursorKind.CONSTRUCTOR]):
+        if constructor.is_default_constructor():
+            default_constructor = constructor
+            break
 
     if default_constructor is None:
         logging.warning(f"Could not find default constructor for class \"{class_node.spelling}\"")
         return "// ERROR: A default constructor is required for reflection, i.e. \"ClassName() = default;\""
 
-    logging.info(f"Found default constructor for class \"{class_node.spelling}\" (Line {default_constructor.location.line})")
+    logging.info(
+        f"Found default constructor for class \"{class_node.spelling}\" (Line {default_constructor.location.line})")
+
+    static_methods = generate_static_methods_array(class_node)
 
     inplace_members = generate_class_member_array(class_node)
 
@@ -259,7 +324,7 @@ def generate_class_reflection(class_node):
     override = f"VG_REFLECTED_IMPL({class_node.spelling});"
 
     return (f"// +{reflected_object_str}\n" + inplace_members
-            + "\n" + "".join(enums_arr[0])
+            + "\n" + "".join(enums_arr[0]) + "\n" + static_methods
             + f"\nconst vigil::FixedArray<const ClassEnum*, {len(enums_arr[1])}> k{class_node.spelling}Enums = {{ {', '.join('&' + x for x in enums_arr[1])} }};"
             + f"\n{override}\n" + f"// -{reflected_object_str}\n")
 
@@ -289,6 +354,14 @@ def is_class_reflected(class_node):
     for attribute in attributes:
         if attribute.spelling == "VG_CLASS_REFLECTION":
             return True
+
+def is_safe_field(class_node):
+    attributes = class_node.get_children()
+    for attribute in attributes:
+        if attribute.spelling == "VG_SAFE_FIELD":
+            return True
+
+    return False
 
 for class_node in filter_node_list_by_node_kind(translation_unit.cursor.get_children(),
                                                 [clang.cindex.CursorKind.CLASS_DECL]):

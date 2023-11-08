@@ -5,6 +5,7 @@
 #ifndef VIGILSDK_UNITTEST_H
 #define VIGILSDK_UNITTEST_H
 
+#include <iostream>
 #include <memory>
 
 #include <Common/ObjectModel/Object.h>
@@ -33,11 +34,13 @@ public: // Methods
 
 // +Reflection(ClassName:TestObject2)
 const vigil::ClassMember kTestObject2ClassMembers[] = {
-    { VG_CRC32("Foo"),"Foo",VG_CRC32("bool"),"bool",offsetof(TestObject2, Foo),sizeof(bool),ClassMember::Flags_None },
-    { VG_CRC32("Bar"),"Bar",VG_CRC32("float"),"float",offsetof(TestObject2, Bar),sizeof(float),ClassMember::Flags_None },
-    { VG_CRC32("Baz"),"Baz",VG_CRC32("int32_t"),"int32_t",offsetof(TestObject2, Baz),sizeof(int32_t),ClassMember::Flags_None },
+{ VG_CRC32("Foo"),"Foo",VG_CRC32("bool"),"bool",offsetof(TestObject2, Foo),sizeof(bool), },
+{ VG_CRC32("Bar"),"Bar",VG_CRC32("float"),"float",offsetof(TestObject2, Bar),sizeof(float), },
+{ VG_CRC32("Baz"),"Baz",VG_CRC32("int32_t"),"int32_t",offsetof(TestObject2, Baz),sizeof(int32_t), },
 };
 
+const vigil::ClassMethod kTestObject2StaticMethods[] = {
+};
 const vigil::FixedArray<const ClassEnum*, 0> kTestObject2Enums = {  };
 VG_REFLECTED_IMPL(TestObject2);
 // -Reflection(ClassName:TestObject2)
@@ -51,16 +54,40 @@ public: // Constructors and Destructor
 public: // Methods
     virtual Class* GetClass() const override;
 
-    TestObject2* A;
-    TestObject2* B;
+    VG_SAFE_FIELD std::shared_ptr<TestObject2> A;
+    VG_SAFE_FIELD std::shared_ptr<TestObject2> B;
+
+    VG_SAFE_FIELD std::shared_ptr<TestObject2> C[2];
+
+    static void TestReflectFn()
+    {
+        std::cout << "Hello from TestReflectFn!" << std::endl;
+    }
+
+    static void TestReflectFn2()
+    {
+        std::cout << "Hello from TestReflectFn2!" << std::endl;
+    }
+
+    static int Test2(int x, int y)
+    {
+        return x + y;
+    }
 
 };
+
 // +Reflection(ClassName:TestObject)
 const vigil::ClassMember kTestObjectClassMembers[] = {
-    { VG_CRC32("A"),"A",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, A),sizeof(TestObject2 *),ClassMember::Flags_Pointer },
-    { VG_CRC32("B"),"B",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, B),sizeof(TestObject2 *),ClassMember::Flags_Pointer },
+{ VG_CRC32("A"),"A",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, A),sizeof(std::shared_ptr<TestObject2>),vigil::ClassMember::Flags_Pointer | vigil::ClassMember::Flags_SafeField },
+{ VG_CRC32("B"),"B",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, B),sizeof(std::shared_ptr<TestObject2>),vigil::ClassMember::Flags_Pointer | vigil::ClassMember::Flags_SafeField },
+{ VG_CRC32("C"),"C",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, C),sizeof(std::shared_ptr<TestObject2>[2]),vigil::ClassMember::Flags_ConstantArray | vigil::ClassMember::Flags_Pointer | vigil::ClassMember::Flags_SafeField },
 };
 
+const vigil::ClassMethod kTestObjectStaticMethods[] = {
+{ "TestReflectFn",VG_CRC32("TestReflectFn"),(void*)TestObject::TestReflectFn,MethodType_Static },
+{ "TestReflectFn2",VG_CRC32("TestReflectFn2"),(void*)TestObject::TestReflectFn2,MethodType_Static },
+{ "Test2",VG_CRC32("Test2"),(void*)TestObject::Test2,MethodType_Static },
+};
 const vigil::FixedArray<const ClassEnum*, 0> kTestObjectEnums = {  };
 VG_REFLECTED_IMPL(TestObject);
 // -Reflection(ClassName:TestObject)

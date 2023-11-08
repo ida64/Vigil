@@ -26,6 +26,39 @@ bool Write(vigil::Object* object, vigil::ClassMember* member, nlohmann::json& m_
     return true;
 }
 
+template<typename PtrType>
+void WriteObjectArray(PtrType* ptr, size_t size, std::vector<nlohmann::json>& elements)
+{
+    using namespace vigil;
+
+    for(vgS32 idx = 0; idx < size; ++idx)
+    {
+        PtrType currentObject = ptr[idx];
+        if(!currentObject)
+        {
+            continue;
+        }
+
+        JsonWriter writer;
+        vgBool result = false;
+        if constexpr (std::is_same_v<PtrType, Object*>)
+        {
+            result = Object::Serialize(ObjectPtr(currentObject, [](Object*) -> void {}), writer);
+        }
+        else if constexpr (std::is_same_v<PtrType, ObjectPtr>)
+        {
+            result = Object::Serialize(currentObject, writer);
+        }
+
+        if(!result)
+        {
+            continue;
+        }
+
+        elements.push_back(writer.GetJson());
+    }
+}
+
 vgBool vigil::JsonWriter::Write(Object* object, ClassMember* member)
 {
     switch(member->GetTypeID())
@@ -67,26 +100,74 @@ vgBool vigil::JsonWriter::Write(Object* object, ClassMember* member)
             // Pointers require additional processing
             if(member->IsPointer())
             {
-                if(member->IsConstantArray())
-                {
-                    // TODO: Implement constant array pointers
-                    return false;
-                }
+                nlohmann::json& localDocumentRef = m_JsonDoc;
 
-                auto* ptr = reinterpret_cast<Object**>(object->GetPtrTo(member));
-                if(!ptr)
-                {
-                    return false;
-                }
+                ObjectPtr objectPtr = nullptr;
 
-                // Skip object pointers that haven't been initialized.
-                if(!*ptr)
+                // If the member is a pointer, we need to check if it's a safe (smart pointer) field.
+                if(!member->IsSafeField())
                 {
-                    return false;
-                }
+                    if(member->IsConstantArray())
+                    {
+                        auto* ptr = reinterpret_cast<Object**>(object->GetPtrTo(member));
+                        if(!ptr)
+                        {
+                            return false;
+                        }
 
-                // Refer to JsonReader::Read default case for explanation.
-                const auto& objectPtr = ObjectPtr(*ptr, [](Object*){});
+                        std::vector<nlohmann::json> elements;
+                        WriteObjectArray<Object*>(ptr, member->GetSize() / sizeof(Object*), elements);
+
+                        localDocumentRef[member->GetName()] = std::move(elements);
+                        return true;
+                    }
+
+                    auto* ptr = reinterpret_cast<Object**>(object->GetPtrTo(member));
+                    if(!ptr)
+                    {
+                        return false;
+                    }
+
+                    // Skip object pointers that haven't been initialized.
+                    if(!*ptr)
+                    {
+                        return false;
+                    }
+
+                    // Refer to JsonReader::Read default case for explanation.
+                    objectPtr = ObjectPtr(*ptr, [](Object*) -> void {});
+                }else
+                {
+                    if(member->IsConstantArray())
+                    {
+                        auto* ptr = reinterpret_cast<ObjectPtr*>(object->GetPtrTo(member));
+                        if(!ptr)
+                        {
+                            return false;
+                        }
+
+                        std::vector<nlohmann::json> elements;
+                        WriteObjectArray<ObjectPtr>(ptr, member->GetSize() / sizeof(ObjectPtr), elements);
+
+                        localDocumentRef[member->GetName()] = std::move(elements);
+
+                        return true;
+                    }
+
+                    auto* ptr = reinterpret_cast<ObjectPtr*>(object->GetPtrTo(member));
+                    if(!ptr)
+                    {
+                        return false;
+                    }
+
+                    // Skip object pointers that haven't been initialized.
+                    if(!*ptr)
+                    {
+                        return false;
+                    }
+
+                    objectPtr = *ptr;
+                }
 
                 // Create a new writer for the object, and serialize it.
                 JsonWriter writer;
@@ -96,7 +177,7 @@ vgBool vigil::JsonWriter::Write(Object* object, ClassMember* member)
                 }
 
                 // Add the serialized object to the json document.
-                m_JsonDoc[member->GetName()] = writer.GetJson();
+                localDocumentRef[member->GetName()] = writer.GetJson();
 
                 return true;
             }

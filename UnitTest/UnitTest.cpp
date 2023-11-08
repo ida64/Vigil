@@ -22,7 +22,19 @@ TEST_CASE("JsonReader")
                 "Foo": false,
                 "Bar": 2.0,
                 "Baz": 22
-            }
+            },
+            "C": [
+                {
+                    "Foo": true,
+                    "Bar": 2.0,
+                    "Baz": 22
+                },
+                {
+                    "Foo": false,
+                    "Bar": 2.0,
+                    "Baz": 22
+                }
+            ]
         }
     )"_json;
 
@@ -30,6 +42,22 @@ TEST_CASE("JsonReader")
 
     JsonReader testReader(testJson);
     CHECK_EQ(Object::Deserialize(testObject, testReader), true);
+
+    SUBCASE("Object Array")
+    {
+        CHECK_NE(testObject->C[0], nullptr);
+        CHECK_NE(testObject->C[1], nullptr);
+
+        CHECK_EQ(testObject->C[0]->Foo, true);
+        CHECK_EQ(testObject->C[0]->Bar, 2.0);
+        CHECK_EQ(testObject->C[0]->Baz, 22);
+
+        CHECK_EQ(testObject->C[1]->Foo, false);
+        CHECK_EQ(testObject->C[1]->Bar, 2.0);
+        CHECK_EQ(testObject->C[1]->Baz, 22);
+    }
+
+    CHECK_NE(testObject->A, nullptr);
 
     SUBCASE("Read")
     {
@@ -80,7 +108,19 @@ TEST_CASE("JsonWriter")
                 "Foo": false,
                 "Bar": 2.0,
                 "Baz": 22
-            }
+            },
+            "C": [
+                {
+                    "Foo": true,
+                    "Bar": 2.0,
+                    "Baz": 22
+                },
+                {
+                    "Foo": false,
+                    "Bar": 2.0,
+                    "Baz": 22
+                }
+            ]
         }
     )"_json;
 
@@ -92,8 +132,18 @@ TEST_CASE("JsonWriter")
     JsonWriter testWriter;
     CHECK_EQ(Object::Serialize(testObject, testWriter), true);
 
+    std::cout << testWriter.GetJson().dump() << std::endl;
+
     SUBCASE("Write")
     {
         CHECK_EQ(testWriter.GetJson(), testJson);
     }
+}
+
+TEST_CASE("Static Method")
+{
+    Class* objClass = GetClassByID(VG_CRC32("TestObject"));
+    CHECK_NE(objClass, nullptr);
+
+    CHECK_EQ(objClass->CallMethod<int>("Test2", 1, 2), 3);
 }

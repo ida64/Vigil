@@ -1,13 +1,16 @@
 /*
 * (C) 2023 Zel Software, SP
-* Please review the license provided before using this project in any capacity. 
+* Please review the license provided before using this project in any capacity.
 */
 #ifndef VIGILSDK_OBJECT_H
 #define VIGILSDK_OBJECT_H
 
+#include <algorithm>
+
 #include <Common/ObjectModel/Reflection/Class.h>
 #include <Common/ObjectModel/Reflection/ClassMember.h>
 #include <Common/ObjectModel/Reflection/ClassEnum.h>
+#include <Common/ObjectModel/Reflection/ClassMethod.h>
 
 #include <Common/ObjectModel/Reflection/ObjectReader.h>
 #include <Common/ObjectModel/Reflection/ObjectWriter.h>
@@ -24,6 +27,8 @@
     static inline Class k##Type##Class( \
             k##Type##ClassMembers, \
             VG_ARRAY_SIZE(k##Type##ClassMembers), \
+            k##Type##StaticMethods,      \
+            VG_ARRAY_SIZE(k##Type##StaticMethods),\
             k##Type##Enums.GetBase(), \
             #Type, \
             VG_CRC32(#Type), \
@@ -66,7 +71,7 @@ namespace vigil
         /// GetPtrTo returns a pointer to the given member
         /// @param [in] member Pointer to the member to get a pointer to
         /// @return void* Pointer to the member
-        void* GetPtrTo(ClassMember* member);
+        VG_INLINE void* GetPtrTo(ClassMember* member);
 
         /// GetValueOf returns the value of the member with the given name
         /// @param [in] name Name of the member to get the value of
@@ -80,12 +85,26 @@ namespace vigil
         template<typename T>
         void SetValueOf(const vgString& name, const T& value);
 
+        template<typename Ret, typename... Args>
+        VG_INLINE Ret CallMethod(vgString name, Args...args);
+
         /// GetClass returns the class of the object
         /// @return Class* Pointer to the class of the object
         /// @note This method must be implemented by the derived class, see VG_REFLECTED_IMPL
         virtual Class* GetClass() const = 0;
 
     }; // class Object
+
+    VG_INLINE void* vigil::Object::GetPtrTo(ClassMember* member)
+    {
+        return reinterpret_cast<vgByte*>(this) + member->GetOffset();
+    }
+
+    template <typename Ret, typename... Args>
+    Ret vigil::Object::CallMethod(vgString name, Args... args)
+    {
+        return this->GetClass()->CallMethod<Ret>(args...);
+    }
 
     // TODO(GetValueOf, SetValueOf): Add proper recursive search
 

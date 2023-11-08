@@ -5,12 +5,18 @@
 #ifndef VIGILSDK_BASECLASS_H
 #define VIGILSDK_BASECLASS_H
 
+#include <iostream>
+#include <algorithm>
+
+#include <Common/Exception/ValueNotFound.h>
+
 #include <Common/Base/BaseDefs.h>
 #include <Common/Container/Array.h>
 #include <Common/Container/FixedArray.h>
 
 #include <Common/ObjectModel/Reflection/ClassMember.h>
 #include <Common/ObjectModel/Reflection/ClassEnum.h>
+#include <Common/ObjectModel/Reflection/ClassMethod.h>
 
 #include <map>
 
@@ -32,6 +38,7 @@ namespace vigil
         /// @param [in] classID Unique ID of the class
         /// @param [in] parentClass Pointer to the parent class
         VG_INLINE Class(const ClassMember* members, vgU32 nbMembers,
+                        const ClassMethod* methods, vgU32 nbMethods,
                         const FixedArrayBase& enums,
                         vgString className, vgU32 classID,
                         Class* parentClass,
@@ -62,12 +69,20 @@ namespace vigil
         /// @return [out] Array of all members in the class
         VG_INLINE Array<ClassMember*> GetMembers() const;
 
+        VG_INLINE Array<ClassMethod*> GetMethods() const;
+
+        template <typename Ret, typename... Args>
+        Ret CallMethod(vgString name, Args... args);
+
     private: // Member Variables
         /// Array of class members
         Array<ClassMember*> m_Members;
 
         /// Array of class enums
         Array<ClassEnum*> m_Enums;
+
+        /// Array of class methods
+        Array<ClassMethod*> m_Methods;
 
         /// Name of the class (e.g. "Class")
         vgString m_ClassName;
@@ -86,6 +101,7 @@ namespace vigil
     }; // class Class
 
     VG_INLINE Class::Class(const ClassMember* members, vgU32 nbMembers,
+                           const ClassMethod* methods, vgU32 nbMethods,
                            const FixedArrayBase& enums,
                            vgString className, vgU32 classID,
                            Class* parentClass,
@@ -93,13 +109,23 @@ namespace vigil
     : m_Constructor(reinterpret_cast<void* (*)()>(constructor)),
     m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
     {
-        // Store pointers from the const array.
+        // Store pointers from the members const array.
         Array<ClassMember*>& membersArray = m_Members;
         membersArray.Resize(nbMembers);
 
         for(vgS32 idx = 0; auto& ref : membersArray)
         {
             ref = const_cast<ClassMember*>(&members[idx]);
+            ++idx;
+        }
+
+        // Store pointers from the methods const array.
+        Array<ClassMethod*>& methodsArray = m_Methods;
+        methodsArray.Resize(nbMethods);
+
+        for(vgS32 idx = 0; auto& ref : methodsArray)
+        {
+            ref = const_cast<ClassMethod*>(&methods[idx]);
             ++idx;
         }
 
@@ -132,10 +158,44 @@ namespace vigil
         return m_Constructor();
     }
 
+    Array<ClassMethod*> Class::GetMethods() const
+    {
+        return m_Methods;
+    }
+
+    template <typename Ret, typename... Args>
+    Ret Class::CallMethod(vgString name, Args... args)
+    {
+        Array<ClassMethod*> methods = this->GetMethods();
+
+        const vgU32 crc32 = ComputeStringCRC32(name);
+
+        auto iter = std::find_if(methods.begin(), methods.end(),
+                                 [crc32](ClassMethod* method) -> bool
+                                 {
+                                     return method->GetID() == crc32;
+                                 });
+
+        if(iter != methods.end())
+        {
+            return (*iter)->template Call<Ret, Args...>(args...);
+        }
+
+        throw ValueNotFoundException("Method not found");
+    }
+
     /// GetClassByID returns the class with the given ID
     /// @param [in] id ID of the class to get
     /// @return Class* Pointer to the class with the given ID
-    Class* GetClassByID(vgU32 id);
+    VG_INLINE Class* GetClassByID(vgU32 id)
+    {
+        auto iter = Class::ms_IDToClassMap.find(id);
+        if(iter != Class::ms_IDToClassMap.end())
+        {
+            return iter->second;
+        }
+        return nullptr;
+    }
 
 } // namespace vigil
 

@@ -13,12 +13,10 @@ namespace vigil
     {
     public: // Constructors and Destructor
         /// Default constructor
-        EnumValue(vgString name, vgU32 id, vgU32 value)
-            : m_Name(name)
-            , m_ID(id)
-            , m_Value(value)
-        {
-        }
+        /// @param [in] name Name of the enum value
+        /// @param [in] id Unique ID of the enum value
+        /// @param [in] value Value of the enum value
+        VG_INLINE EnumValue(vgString name, vgU32 id, vgU32 value);
 
         /// Default destructor
         ~EnumValue() = default;
@@ -47,6 +45,14 @@ namespace vigil
         vgU32 m_Value;
 
     }; // class EnumValue
+
+    EnumValue::EnumValue(vgString name, vgU32 id, vgU32 value)
+
+            : m_Name(name)
+            , m_ID(id)
+            , m_Value(value)
+    {
+    }
 
     vgString EnumValue::GetName() const
     {

@@ -31,10 +31,6 @@ namespace vigil
         /// @return const nlohmann::json& JSON document
         const nlohmann::json& GetJson() const;
 
-        /// DocumentToStream writes the JSON document to the given stream
-        /// @param [in] stream Stream to write the JSON document to
-        void DocumentToStream(std::ostream& stream);
-
     private: // Member Variables
         /// JSON document to read from
         const nlohmann::json& m_JsonDoc;

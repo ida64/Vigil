@@ -39,6 +39,8 @@ namespace vigil
 
     }; // class JsonWriter
 
+
+
 } // namespace vigil
 
 #endif //VIGILSDK_JSONWRITER_H

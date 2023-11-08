@@ -43,6 +43,10 @@ TEST_CASE("JsonReader")
     JsonReader testReader(testJson);
     CHECK_EQ(Object::Deserialize(testObject, testReader), true);
 
+    Class* parentClass = testObject->GetClass()->GetParentClass();
+    CHECK_NE(parentClass, nullptr);
+    std::cout << parentClass->GetClassName() << std::endl;
+
     SUBCASE("Object Array")
     {
         CHECK_NE(testObject->C[0], nullptr);
@@ -142,7 +146,7 @@ TEST_CASE("JsonWriter")
 
 TEST_CASE("Static Method")
 {
-    Class* objClass = GetClassByID(VG_CRC32("TestObject"));
+    Class* objClass = Class::GetClassByID(VG_CRC32("TestObject"));
     CHECK_NE(objClass, nullptr);
 
     CHECK_EQ(objClass->CallMethod<int>("Test2", 1, 2), 3);

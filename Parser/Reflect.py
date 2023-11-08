@@ -297,6 +297,14 @@ def generate_enums_array(class_cursor: clang.cindex.Cursor):
     return ("".join(result), enum_names)
 
 
+def get_class_base(class_node):
+    base_classes = filter_node_list_by_node_kind(class_node.get_children(), [clang.cindex.CursorKind.CXX_BASE_SPECIFIER])
+
+    if len(base_classes) == 0:
+        return None
+
+    return base_classes[0].type.get_declaration()
+
 def generate_class_reflection(class_node):
     # get default constructor
     default_constructor = None
@@ -321,7 +329,14 @@ def generate_class_reflection(class_node):
     reflected_object_str = reflected_object.serialize()
 
     enums_arr = generate_enums_array(class_node)
-    override = f"VG_REFLECTED_IMPL({class_node.spelling});"
+
+    base_class_name = ""
+
+    base_class_node = get_class_base(class_node)
+    if base_class_node is not None:
+        base_class_name = base_class_node.spelling
+
+    override = f"VG_REFLECTED_IMPL({class_node.spelling}, VG_CRC32(\"{base_class_name}\"));"
 
     return (f"// +{reflected_object_str}\n" + inplace_members
             + "\n" + "".join(enums_arr[0]) + "\n" + static_methods

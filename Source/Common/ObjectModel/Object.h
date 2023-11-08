@@ -19,7 +19,7 @@
 
 /// VG_CLASS_REFLECTION is a macro that defines the Constructor, Class, and GetClass method for a reflected class.
 /// @param [in] Type Type of the class to define the reflection for
-#define VG_REFLECTED_IMPL(Type) \
+#define VG_REFLECTED_IMPL(Type, BaseClassID) \
     static Type* s##Type##Constructor() \
     { \
         return new Type(); \
@@ -32,7 +32,7 @@
             k##Type##Enums.GetBase(), \
             #Type, \
             VG_CRC32(#Type), \
-            nullptr, \
+            BaseClassID, \
             (void*)s##Type##Constructor \
             ); \
     Class* Type::GetClass() const \

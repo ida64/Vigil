@@ -41,7 +41,7 @@ namespace vigil
                         const ClassMethod* methods, vgU32 nbMethods,
                         const FixedArrayBase& enums,
                         vgString className, vgU32 classID,
-                        Class* parentClass,
+                        vgU32 parentClassID,
                         void* constructor);
 
         /// Default destructor
@@ -49,6 +49,7 @@ namespace vigil
 
     public: // Static
         static inline std::map<vgU32, Class*> ms_IDToClassMap;
+        static VG_INLINE Class* GetClassByID(vgU32 id);
 
     public: // Methods
         /// GetClassName returns the name of the class
@@ -94,9 +95,9 @@ namespace vigil
         /// Pointer to the constructor of the class
         void*(*m_Constructor)();
 
-        /// Pointer to the parent class
-        /// @note If the class has no parent, this is nullptr
-        Class* m_ParentClass;
+        /// Unique ID of the parent class
+        /// @note If the class has no parent, this is 0
+        vgU32 m_ParentClassID;
 
     }; // class Class
 
@@ -104,10 +105,10 @@ namespace vigil
                            const ClassMethod* methods, vgU32 nbMethods,
                            const FixedArrayBase& enums,
                            vgString className, vgU32 classID,
-                           Class* parentClass,
+                           vgU32 parentClassID,
                            void* constructor)
     : m_Constructor(reinterpret_cast<void* (*)()>(constructor)),
-    m_ClassName(className), m_ClassID(classID), m_ParentClass(parentClass)
+    m_ClassName(className), m_ClassID(classID), m_ParentClassID(parentClassID)
     {
         // Store pointers from the members const array.
         Array<ClassMember*>& membersArray = m_Members;
@@ -145,7 +146,12 @@ namespace vigil
 
     Class* Class::GetParentClass() const
     {
-        return m_ParentClass;
+        const vgU32 parentClassID = m_ParentClassID;
+        if(parentClassID == 0)
+        {
+            return nullptr;
+        }
+        return GetClassByID(parentClassID);
     }
 
     Array<ClassMember*> Class::GetMembers() const
@@ -187,7 +193,7 @@ namespace vigil
     /// GetClassByID returns the class with the given ID
     /// @param [in] id ID of the class to get
     /// @return Class* Pointer to the class with the given ID
-    VG_INLINE Class* GetClassByID(vgU32 id)
+    VG_INLINE Class* Class::GetClassByID(vgU32 id)
     {
         auto iter = Class::ms_IDToClassMap.find(id);
         if(iter != Class::ms_IDToClassMap.end())

@@ -79,8 +79,10 @@ vgBool vigil::JsonReader::Read(Object* object, ClassMember* member)
             // Pointers require additional processing
             if(member->IsPointer())
             {
+                const nlohmann::json& localDocument = this->GetJson();
+
                 // Get the class of the object
-                const Class* objectClass = GetClassByID(member->GetTypeID());
+                const Class* objectClass = Class::GetClassByID(member->GetTypeID());
                 if(!objectClass)
                 {
                     return false;
@@ -92,7 +94,7 @@ vgBool vigil::JsonReader::Read(Object* object, ClassMember* member)
                     {
                         auto* ptr = reinterpret_cast<Object**>(object->GetPtrTo(member));
 
-                        const nlohmann::json& array = m_JsonDoc[member->GetName()];
+                        const nlohmann::json& array = localDocument[member->GetName()];
                         if(!array.is_array())
                         {
                             return false;
@@ -133,7 +135,7 @@ vgBool vigil::JsonReader::Read(Object* object, ClassMember* member)
                     }
 
                     // Create a new reader for the object, and deserialize it.
-                    JsonReader reader(m_JsonDoc[member->GetName()]);
+                    JsonReader reader(localDocument[member->GetName()]);
                     if(!Object::Deserialize(newObject, reader))
                     {
                         return false;
@@ -155,7 +157,7 @@ vgBool vigil::JsonReader::Read(Object* object, ClassMember* member)
                     {
                         auto* ptr = reinterpret_cast<ObjectPtr*>(object->GetPtrTo(member));
 
-                        const nlohmann::json& array = m_JsonDoc[member->GetName()];
+                        const nlohmann::json& array = localDocument[member->GetName()];
                         if(!array.is_array())
                         {
                             return false;
@@ -197,7 +199,7 @@ vgBool vigil::JsonReader::Read(Object* object, ClassMember* member)
                     }
 
                     // Create a new reader for the object, and deserialize it.
-                    JsonReader reader(m_JsonDoc[member->GetName()]);
+                    JsonReader reader(localDocument[member->GetName()]);
                     if(!Object::Deserialize(newObject, reader))
                     {
                         return false;

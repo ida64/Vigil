@@ -42,10 +42,31 @@ const vigil::ClassMember kTestObject2ClassMembers[] = {
 const vigil::ClassMethod kTestObject2StaticMethods[] = {
 };
 const vigil::FixedArray<const ClassEnum*, 0> kTestObject2Enums = {  };
-VG_REFLECTED_IMPL(TestObject2);
+VG_REFLECTED_IMPL(TestObject2, VG_CRC32("Object"));
 // -Reflection(ClassName:TestObject2)
 
-class VG_CLASS_REFLECTION TestObject : public Object
+class VG_CLASS_REFLECTION BaseTestObject : public Object
+{
+public: // Constructors and Destructor
+    BaseTestObject() = default;
+
+    virtual ~BaseTestObject() = default;
+
+public: // Methods
+    virtual Class* GetClass() const override;
+};
+
+// +Reflection(ClassName:BaseTestObject)
+const vigil::ClassMember kBaseTestObjectClassMembers[] = {
+};
+
+const vigil::ClassMethod kBaseTestObjectStaticMethods[] = {
+};
+const vigil::FixedArray<const ClassEnum*, 0> kBaseTestObjectEnums = {  };
+VG_REFLECTED_IMPL(BaseTestObject, VG_CRC32("Object"));
+// -Reflection(ClassName:BaseTestObject)
+
+class VG_CLASS_REFLECTION TestObject : public BaseTestObject
 {
 public: // Constructors and Destructor
     TestObject() = default;
@@ -89,7 +110,7 @@ const vigil::ClassMethod kTestObjectStaticMethods[] = {
 { "Test2",VG_CRC32("Test2"),(void*)TestObject::Test2,MethodType_Static },
 };
 const vigil::FixedArray<const ClassEnum*, 0> kTestObjectEnums = {  };
-VG_REFLECTED_IMPL(TestObject);
+VG_REFLECTED_IMPL(TestObject, VG_CRC32("BaseTestObject"));
 // -Reflection(ClassName:TestObject)
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN

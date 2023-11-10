@@ -47,6 +47,17 @@ typedef const char* vgString;
     constexpr std::string_view kFieldFlag_Pointer = "vigil::ClassMember::Flags_Pointer";
     constexpr std::string_view kFieldFlag_ConstantArray = "vigil::ClassMember::Flags_ConstantArray";
 
+    enum AttributeIndex
+    {
+        AttributeIndex_ClassReflection = 0,
+        AttributeIndex_SafeField = 1,
+
+    }; // enum AttributeIndex
+
+    static const char* kAttributes[] = {
+        "VG_CLASS_REFLECTION",
+        "VG_SAFE_FIELD",
+    };
 
 } // namespace vigil::inline parser_specification
 

@@ -35,16 +35,23 @@ namespace vigil
         explicit ClassBuilder(CXCursor cursor);
 
     public: // Methods
+        /// Build builds the class
+        /// @return std::string containing the built class
         std::string Build() override;
 
+        /// GetCursor returns the cursor used to build the class
+        /// @return const CXCursor& The cursor
         const CXCursor& GetCursor();
 
     private: // Private Methods
+        /// DiscoverChildren discovers all children of the class
         void DiscoverChildren();
 
     private: // Member Variables
+        /// The cursor used to build the class
         CXCursor m_Cursor;
 
+        /// Map of CXCursorKind to array of TypeBuilder
         std::map<CXCursorKind, std::vector<std::shared_ptr<TypeBuilder>>> m_KindToBuilderMap;
 
     }; // class ClassBuilder

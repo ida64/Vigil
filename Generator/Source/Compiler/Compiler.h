@@ -28,14 +28,6 @@ namespace vigil
 {
     constexpr std::string_view kDefaultCppVersion = "c++20";
 
-    enum LoadResult : uint8_t
-    {
-        LoadResult_Success = 0,
-        LoadResult_FileSystemError,
-        LoadResult_PreProcessError,
-
-    }; // enum LoadResult
-
     class Compiler
     {
     public: // Constructors and Destructor
@@ -73,6 +65,9 @@ namespace vigil
         /// @return True if the header was pre-processed successfully, false otherwise.
         [[nodiscard]] absl::Status PreProcess();
 
+        /// Initialize Clang and parse the temporary file
+        /// @param headerPath The path to the header file
+        /// @return True if Clang was initialized and the header was parsed successfully, false otherwise.
         [[nodiscard]] absl::Status ClangInit(const std::string& headerPath);
 
         /// Add a temp file to the list of files to delete
@@ -99,6 +94,7 @@ namespace vigil
         /// Translation unit of the clang compiler
         CXTranslationUnit m_ClangTU = nullptr;
 
+        /// Classes that have been specified for reflection
         std::vector<std::shared_ptr<ClassBuilder>> m_SpecifiedClasses;
 
     };

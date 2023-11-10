@@ -5,8 +5,6 @@
 
 #include "Compiler.h"
 
-#include <iostream>
-
 absl::Status vigil::Compiler::Compile()
 {
     const std::filesystem::path& path = this->GetPath();
@@ -22,6 +20,7 @@ absl::Status vigil::Compiler::Compile()
         return absl::InternalError("Failed to open file stream");
     }
 
+    // Read the file into a string
     std::string contents((std::istreambuf_iterator<char>(inputFileStream)),
                          std::istreambuf_iterator<char>());
 
@@ -32,16 +31,20 @@ absl::Status vigil::Compiler::Compile()
 
     m_Contents = std::move(contents);
 
-    absl::Status preProcessStatus = this->PreProcess();
-    if(!preProcessStatus.ok())
+    if(absl::Status status = this->PreProcess(); !status.ok())
     {
-        return preProcessStatus;
+        return status;
     }
 
-    for(auto& classBuilder : m_SpecifiedClasses)
+    // Build all classes, store output in a vector
+    std::vector<std::string> builderResults
+    = m_SpecifiedClasses | ranges::views::transform([](const auto& builder)
     {
-        std::cout << classBuilder->Build() << std::endl;
-    }
+        return builder->Build();
+    }) | ranges::to<std::vector<std::string>>();
+
+    // Join the results into a single string
+    std::string result = absl::StrJoin(builderResults, "\n");
 
     return absl::OkStatus();
 }
@@ -84,10 +87,10 @@ absl::Status vigil::Compiler::PreProcess()
     // Add the temp file path to the list of temp files to delete
     this->AddTempFile(tempPath);
 
-    absl::Status clangInitStatus = this->ClangInit(tempPath.string());
-    if(!clangInitStatus.ok())
+    // Initialize Clang and parse the temporary file
+    if (absl::Status status = this->ClangInit(tempPath.string()); !status.ok())
     {
-        return clangInitStatus;
+        return status;
     }
 
     return absl::OkStatus();
@@ -95,34 +98,33 @@ absl::Status vigil::Compiler::PreProcess()
 
 absl::Status vigil::Compiler::ClangInit(const std::string& headerPath)
 {
-    m_ClangIndex = clang_createIndex(0, 0);
+    // Create the Clang index
+    if(m_ClangIndex = clang_createIndex(0, 0); !m_ClangIndex)
+    {
+        return absl::InternalError("Failed to create Clang index");
+    }
 
-    CXTranslationUnit translationUnit = clang_parseTranslationUnit(
-            m_ClangIndex,
-            headerPath.c_str(),
-            nullptr,
-            0,
-            nullptr,
-            0,
-            CXTranslationUnit_None
-    );
-
-    if (!translationUnit)
+    // Parse the translation unit
+    if(m_ClangTU = clang_parseTranslationUnit(m_ClangIndex,
+                                              headerPath.c_str(),
+                                              nullptr,
+                                              0,
+                                              nullptr,
+                                              0,
+                                              CXTranslationUnit_None); !m_ClangTU)
     {
         return absl::InternalError("Failed to parse translation unit");
     }
 
-    m_ClangTU = translationUnit;
+    const CXTranslationUnit& translationUnit = m_ClangTU;
 
     auto nodes = GetNodesByKinds(clang_getTranslationUnitCursor(translationUnit),
                                  {CXCursor_ClassDecl, CXCursor_StructDecl});
-    for(auto& node : nodes)
+    for(const CXCursor& node : nodes)
     {
-        std::cout << CXStringToStringSafe(clang_getCursorSpelling(node)).value() << std::endl;
-
         const std::vector<std::string> annotations = GetNodeAnnotations(node);
         if(!annotations.empty() && std::find(annotations.begin(), annotations.end(),
-                                             "VG_CLASS_REFLECTION") != annotations.end())
+                                             kAttributes[AttributeIndex_ClassReflection]) != annotations.end())
         {
             PLOG_INFO << (node.kind == CXCursor_ClassDecl ? "Class" : "Struct") << " marked for reflection";
 
@@ -130,7 +132,6 @@ absl::Status vigil::Compiler::ClangInit(const std::string& headerPath)
             m_SpecifiedClasses.push_back(std::move(std::make_shared<ClassBuilder>(node)));
         }
     }
-
     return absl::OkStatus();
 }
 

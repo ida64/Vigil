@@ -35,14 +35,20 @@ namespace vigil
         explicit FieldBuilder(CXCursor cursor);
 
     public: // Methods
+        /// Build builds the field
+        /// @return std::string containing the built field
         std::string Build() override;
 
+        /// GetCursor returns the cursor used to build the field
+        /// @return const CXCursor& The cursor
         const CXCursor& GetCursor();
 
     protected: // Protected Methods
+        /// EmitAnnotations emits the flags to the array
         void EmitFlagsToArray(std::vector<std::string>& flags);
 
     private: // Member Variables
+        /// The cursor used to build the field
         CXCursor m_Cursor;
 
     }; // class FieldBuilder

@@ -13,7 +13,9 @@
 
 namespace vigil
 {
+    /// Initialize logging
     void InitializeLogging();
-}
+
+} // namespace vigil
 
 #endif //VIGILSDK_LOG_H

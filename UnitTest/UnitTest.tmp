@@ -5,6 +5,24 @@
 #ifndef VIGILSDK_UNITTEST_H
 #define VIGILSDK_UNITTEST_H
 
+typedef signed char vgChar;
+typedef unsigned char vgUChar;
+typedef unsigned char vgByte;
+typedef unsigned char vgU8;
+typedef signed char vgS8;
+typedef signed short vgShort;
+typedef unsigned short vgUShort;
+typedef signed int vgS32;
+typedef unsigned int vgU32;
+typedef signed long long vgS64;
+typedef unsigned long long vgU64;
+typedef float vgFloat;
+typedef double vgDouble;
+typedef bool vgBool;
+typedef const char* vgString;
+
+#define VG_CLASS_REFLECTION __attribute__((annotate("VG_CLASS_REFLECTION")))
+
 #include <iostream>
 #include <memory>
 
@@ -98,44 +116,11 @@ public: // Methods
 };
 
 // +Reflection(ClassName:TestObject)
-/// Fields: 3
-/// Fields: 3
-const vigil::ClassMember kTestObjectClassMembers[] =
-        {
-
-                {
-                        VG_CRC32("A"),
-                        "A",
-                        VG_CRC32("TestObject2"),
-                        "TestObject2",
-                        offsetof(TestObject, A),
-                        sizeof(std::shared_ptr<TestObject2>),
-                        vigil::ClassMember::Flags_None | vigil::ClassMember::Flags_SafeField |vigil::ClassMember::Flags_Pointer
-
-                },
-
-                {
-                        VG_CRC32("B"),
-                        "B",
-                        VG_CRC32("TestObject2"),
-                        "TestObject2",
-                        offsetof(TestObject, B),
-                        sizeof(std::shared_ptr<TestObject2>),
-                        vigil::ClassMember::Flags_None | vigil::ClassMember::Flags_SafeField | vigil::ClassMember::Flags_Pointer
-
-                },
-
-                {
-                        VG_CRC32("C"),
-                        "C",
-                        VG_CRC32("TestObject2"),
-                        "TestObject2",
-                        offsetof(TestObject, C),
-                        sizeof(std::shared_ptr<TestObject2>[2]),
-                        vigil::ClassMember::Flags_None | vigil::ClassMember::Flags_SafeField | vigil::ClassMember::Flags_Pointer
-                        | vigil::ClassMember::Flags_ConstantArray
-                }
-        };
+const vigil::ClassMember kTestObjectClassMembers[] = {
+{ VG_CRC32("A"),"A",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, A),sizeof(std::shared_ptr<TestObject2>),vigil::ClassMember::Flags_Pointer | vigil::ClassMember::Flags_SafeField },
+{ VG_CRC32("B"),"B",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, B),sizeof(std::shared_ptr<TestObject2>),vigil::ClassMember::Flags_Pointer | vigil::ClassMember::Flags_SafeField },
+{ VG_CRC32("C"),"C",VG_CRC32("TestObject2"),"TestObject2",offsetof(TestObject, C),sizeof(std::shared_ptr<TestObject2>[2]),vigil::ClassMember::Flags_ConstantArray | vigil::ClassMember::Flags_Pointer | vigil::ClassMember::Flags_SafeField },
+};
 
 const vigil::ClassMethod kTestObjectStaticMethods[] = {
 { "TestReflectFn",VG_CRC32("TestReflectFn"),(void*)TestObject::TestReflectFn,MethodType_Static },

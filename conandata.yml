@@ -2,5 +2,9 @@
 # To keep your changes, remove these comment lines, but the plugin won't be able to modify your requirements
 
 requirements:
+  - "range-v3/0.12.0"
+  - "plog/1.1.10"
+  - "abseil/20230125.3"
+  - "argparse/2.9"
   - "nlohmann_json/3.11.2"
   - "doctest/2.4.11"

@@ -30,3 +30,4 @@ find_package(nlohmann_json)
 target_link_libraries(VigilSDK nlohmann_json::nlohmann_json)
 
 add_subdirectory(UnitTest)
+add_subdirectory(Generator)

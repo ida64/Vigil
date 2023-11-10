@@ -97,9 +97,7 @@ namespace vigil
         /// Classes that have been specified for reflection
         std::vector<std::shared_ptr<ClassBuilder>> m_SpecifiedClasses;
 
-    };
-
-    // class Compiler
+    }; // class Compiler
 
 } // namespace vigil
 

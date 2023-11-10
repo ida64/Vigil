@@ -22,7 +22,6 @@ namespace vigil
 {
     class FieldBuilder : public TypeBuilder
     {
-    public:
     public: // Constructors and Destructor
         /// Default constructor
         FieldBuilder() = default;

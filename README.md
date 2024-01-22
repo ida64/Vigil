@@ -102,7 +102,7 @@ And that's it! You should now be ready to use the reflection api and all it has 
 ## Build
 VigilSDK is compatible with both Windows and Linux. With **cmake** and **conan**, you can build the project with the following commands:
 ```bash
-git clone https://github.com/ZelSoftware/VigilSDK.git
+git clone https://github.com/ida64/VigilSDK.git
 cd VigilSDK
 ./build.sh
 ```

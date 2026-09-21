@@ -4,6 +4,7 @@
 */
 #include "JsonWriter.h"
 
+#include <algorithm>
 #include <iostream>
 
 template <typename T>
@@ -39,20 +40,33 @@ vgBool vigil::JsonWriter::Write(Object* object, ClassMember* member)
             if (member->IsConstantArray())
             {
                 auto* ptr = reinterpret_cast<char*>(object->GetPtrTo(member));
-                m_JsonDoc[member->GetName()] = std::string(ptr);
+                if(!ptr)
+                {
+                    return false;
+                }
+
+                const auto capacity = member->GetSize() / sizeof(char);
+                const auto end = std::find(ptr, ptr + capacity, '\0');
+                m_JsonDoc[member->GetName()] = std::string(ptr, end);
                 return true;
             }
             return ::Write<vgChar>(object, member, m_JsonDoc);
         }
         case TypeID_U32:
-        case TypeID_S32:
         {
             return ::Write<vgU32>(object, member, m_JsonDoc);
         }
+        case TypeID_S32:
+        {
+            return ::Write<vgS32>(object, member, m_JsonDoc);
+        }
         case TypeID_U64:
-        case TypeID_S64:
         {
             return ::Write<vgU64>(object, member, m_JsonDoc);
+        }
+        case TypeID_S64:
+        {
+            return ::Write<vgS64>(object, member, m_JsonDoc);
         }
         case TypeID_Double:
         {

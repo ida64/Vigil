@@ -4,6 +4,7 @@
 */
 #include "JsonReader.h"
 
+#include <algorithm>
 #include <iostream>
 
 template <typename T>
@@ -17,8 +18,20 @@ bool Read(vigil::Object* object, vigil::ClassMember* member, const nlohmann::jso
 
     if(member->IsConstantArray())
     {
-        std::vector<T> array = m_JsonDoc[member->GetName()].get<std::vector<T>>();
+        if(member->GetSize() % sizeof(T) != 0)
+        {
+            return false;
+        }
+
+        const auto capacity = member->GetSize() / sizeof(T);
+        const auto array = m_JsonDoc[member->GetName()].get<std::vector<T>>();
+        if(array.size() > capacity)
+        {
+            return false;
+        }
+
         std::copy(array.begin(), array.end(), ptr);
+        std::fill(ptr + array.size(), ptr + capacity, T{});
         return true;
     }
 
@@ -50,21 +63,40 @@ vgBool vigil::JsonReader::Read(Object* object, ClassMember* member)
         {
             if (member->IsConstantArray())
             {
-                auto str = m_JsonDoc[member->GetName()].get<std::string>();
-                std::copy(str.begin(), str.end(), reinterpret_cast<char*>(object->GetPtrTo(member)));
+                auto* ptr = reinterpret_cast<char*>(object->GetPtrTo(member));
+                if(!ptr || member->GetSize() == 0)
+                {
+                    return false;
+                }
+
+                const auto str = m_JsonDoc[member->GetName()].get<std::string>();
+                const auto capacity = member->GetSize() / sizeof(char);
+                if(str.size() >= capacity)
+                {
+                    return false;
+                }
+
+                std::copy(str.begin(), str.end(), ptr);
+                std::fill(ptr + str.size(), ptr + capacity, '\0');
                 return true;
             }
             return ::Read<vgChar>(object, member, m_JsonDoc);
         }
         case TypeID_U32:
-        case TypeID_S32:
         {
             return ::Read<vgU32>(object, member, m_JsonDoc);
         }
+        case TypeID_S32:
+        {
+            return ::Read<vgS32>(object, member, m_JsonDoc);
+        }
         case TypeID_U64:
-        case TypeID_S64:
         {
             return ::Read<vgU64>(object, member, m_JsonDoc);
+        }
+        case TypeID_S64:
+        {
+            return ::Read<vgS64>(object, member, m_JsonDoc);
         }
         case TypeID_Double:
         {

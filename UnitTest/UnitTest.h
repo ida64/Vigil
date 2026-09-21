@@ -65,6 +65,27 @@ const vigil::FixedArray<const ClassEnum*, 0> kTestObjectEnums = {  };
 VG_REFLECTED_IMPL(TestObject);
 // -Reflection(ClassName:TestObject)
 
+class VG_CLASS_REFLECTION TestArrayObject : public Object
+{
+public:
+    virtual Class* GetClass() const override;
+
+    vgU32 Values[4] = { 9, 9, 9, 9 };
+    char Name[5] = { 'x', 'x', 'x', 'x', '\0' };
+    vgS32 Signed32 = 0;
+    vgS64 Signed64 = 0;
+};
+
+const vigil::ClassMember kTestArrayObjectClassMembers[] = {
+    { VG_CRC32("Values"), "Values", VG_CRC32("uint32_t"), "uint32_t", offsetof(TestArrayObject, Values), sizeof(TestArrayObject::Values), ClassMember::Flags_ConstantArray },
+    { VG_CRC32("Name"), "Name", VG_CRC32("char"), "char", offsetof(TestArrayObject, Name), sizeof(TestArrayObject::Name), ClassMember::Flags_ConstantArray },
+    { VG_CRC32("Signed32"), "Signed32", VG_CRC32("int32_t"), "int32_t", offsetof(TestArrayObject, Signed32), sizeof(vgS32), ClassMember::Flags_None },
+    { VG_CRC32("Signed64"), "Signed64", VG_CRC32("int64_t"), "int64_t", offsetof(TestArrayObject, Signed64), sizeof(vgS64), ClassMember::Flags_None },
+};
+
+const vigil::FixedArray<const ClassEnum*, 0> kTestArrayObjectEnums = {  };
+VG_REFLECTED_IMPL(TestArrayObject);
+
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 

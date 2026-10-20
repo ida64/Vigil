@@ -1,0 +1,7 @@
+FROM debian:trixie-slim
+RUN apt-get update && apt-get install -y --no-install-recommends g++ cmake ninja-build git ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /source
+COPY CMakeLists.txt ./
+COPY Source ./Source
+COPY UnitTest ./UnitTest
+RUN cmake -S . -B /build -G Ninja -DVIGIL_BUILD_LEGACY=OFF -DVIGIL_BUILD_SCHEMA_TESTS=ON -DCMAKE_BUILD_TYPE=Debug && cmake --build /build && ctest --test-dir /build --output-on-failure

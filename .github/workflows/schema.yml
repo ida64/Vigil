@@ -16,3 +16,10 @@ jobs:
         run: cmake --build build-schema
       - name: Test
         run: ctest --test-dir build-schema --output-on-failure
+
+  gcc14-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC 14 regression suite in Debian container
+        run: docker build --file Dockerfile.schema-test --tag vigil-schema-gcc14-test .

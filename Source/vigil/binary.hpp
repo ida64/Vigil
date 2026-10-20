@@ -260,7 +260,9 @@ template <class T> void Decode(Reader &in, T &value, std::size_t depth)
         Require(in.Integer(4) == descriptor.m_Version, BinaryError::UnsupportedVersion);
         auto count = in.Integer(4);
         Require(count == descriptor.m_Inspection.size(), BinaryError::InvalidFormat);
-        std::array<bool, std::tuple_size_v<decltype(descriptor.m_Fields)>> seen{};
+        // Refer to the schema type directly: GCC 14 cannot deduce the local auto
+        // descriptor when this extent is captured by the nested generic lambda.
+        std::array<bool, std::tuple_size_v<decltype(Schema<T>::ms_Descriptor.m_Fields)>> seen{};
         for (std::size_t i = 0; i < count; ++i)
         {
             auto fieldId = in.Integer(8);

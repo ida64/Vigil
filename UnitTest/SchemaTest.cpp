@@ -3,18 +3,93 @@
 #include <vigil/binary.hpp>
 struct Position
 {
-public: // Member Variables
-    double m_X = 0;
-    std::int32_t m_Y = 0;
-    bool m_Grounded = false;
+public: // Methods
+    Position(double x = 0, std::int32_t y = 0, bool grounded = false) noexcept
+        : m_X(x), m_Y(y), m_Grounded(grounded)
+    {
+    }
+    double GetX() const noexcept
+    {
+        return m_X;
+    }
+    std::int32_t GetY() const noexcept
+    {
+        return m_Y;
+    }
+    bool GetGrounded() const noexcept
+    {
+        return m_Grounded;
+    }
+    void SetX(double value) noexcept
+    {
+        m_X = value;
+    }
+    void SetY(std::int32_t value) noexcept
+    {
+        m_Y = value;
+    }
+    void SetGrounded(bool value) noexcept
+    {
+        m_Grounded = value;
+    }
+
+private: // Friends
+    friend struct vigil::Schema<Position>;
+
+private: // Member Variables
+    double m_X;
+    std::int32_t m_Y;
+    bool m_Grounded;
 }; // struct Position
 struct Actor
 {
-public: // Member Variables
+public: // Methods
+    Actor(Position position = {}, std::string name = {}, std::vector<std::uint16_t> inventory = {},
+          std::array<float, 2> velocity = {})
+        : m_Position(position), m_Name(std::move(name)), m_Inventory(std::move(inventory)), m_Velocity(velocity)
+    {
+    }
+    const Position &GetPosition() const noexcept
+    {
+        return m_Position;
+    }
+    const std::string &GetName() const noexcept
+    {
+        return m_Name;
+    }
+    const std::vector<std::uint16_t> &GetInventory() const noexcept
+    {
+        return m_Inventory;
+    }
+    const std::array<float, 2> &GetVelocity() const noexcept
+    {
+        return m_Velocity;
+    }
+    void SetPosition(Position value) noexcept
+    {
+        m_Position = value;
+    }
+    void SetName(std::string value) noexcept
+    {
+        m_Name = std::move(value);
+    }
+    void SetInventory(std::vector<std::uint16_t> value) noexcept
+    {
+        m_Inventory = std::move(value);
+    }
+    void SetVelocity(std::array<float, 2> value) noexcept
+    {
+        m_Velocity = value;
+    }
+
+private: // Friends
+    friend struct vigil::Schema<Actor>;
+
+private: // Member Variables
     Position m_Position;
     std::string m_Name;
     std::vector<std::uint16_t> m_Inventory;
-    std::array<float, 2> m_Velocity{};
+    std::array<float, 2> m_Velocity;
 }; // struct Actor
 struct Empty
 {
@@ -38,18 +113,30 @@ template <> struct vigil::Schema<Empty>
 public: // Static Variables
     static constexpr auto ms_Descriptor = vigil::Component<Empty>("test.Empty", 1);
 };
+template <class T>
+concept HasPublicX = requires(T value) { value.m_X; };
+template <class T>
+concept HasPublicDescriptorId = requires(T value) { value.m_Id; };
+static_assert(!HasPublicX<Position>);
+static_assert(!HasPublicDescriptorId<vigil::FieldDescriptor>);
+static_assert(!HasPublicDescriptorId<std::remove_cvref_t<decltype(vigil::Describe<Position>())>>);
+
 static_assert(vigil::ComponentId<Position> == vigil::Id("test.Position"));
-static_assert(vigil::FindField<Position>(vigil::Id("y"))->m_Size == sizeof(std::int32_t));
+static_assert(vigil::FindField<Position>(vigil::Id("y"))->GetSize() == sizeof(std::int32_t));
 
 TEST(Schema, TypedAndPluginInspection)
 {
     Position position{1.5, -64, true};
+    position.SetX(2.5);
+    position.SetGrounded(false);
+    EXPECT_EQ(position.GetX(), 2.5);
+    EXPECT_FALSE(position.GetGrounded());
     auto *descriptor = vigil::FindField<Position>(vigil::Id("y"));
     ASSERT_NE(descriptor, nullptr);
-    EXPECT_EQ(descriptor->m_Kind, vigil::FieldKind::SignedInteger);
-    EXPECT_EQ(*static_cast<const std::int32_t *>(descriptor->m_Read(&position)), -64);
-    *static_cast<std::int32_t *>(descriptor->m_Write(&position)) = 20;
-    EXPECT_EQ(position.m_Y, 20);
+    EXPECT_EQ(descriptor->GetKind(), vigil::FieldKind::SignedInteger);
+    EXPECT_EQ(*static_cast<const std::int32_t *>(descriptor->Read(&position)), -64);
+    *static_cast<std::int32_t *>(descriptor->Write(&position)) = 20;
+    EXPECT_EQ(position.GetY(), 20);
     EXPECT_EQ(vigil::FindField<Position>(vigil::Id("missing")), nullptr);
 }
 TEST(Binary, RoundTripNestedCollections)
@@ -59,12 +146,12 @@ TEST(Binary, RoundTripNestedCollections)
     ASSERT_TRUE(vigil::Serialize(source, bytes));
     Actor decoded;
     ASSERT_TRUE(vigil::Deserialize(bytes, decoded));
-    EXPECT_EQ(decoded.m_Position.m_X, source.m_Position.m_X);
-    EXPECT_EQ(decoded.m_Position.m_Y, source.m_Position.m_Y);
-    EXPECT_EQ(decoded.m_Position.m_Grounded, source.m_Position.m_Grounded);
-    EXPECT_EQ(decoded.m_Name, source.m_Name);
-    EXPECT_EQ(decoded.m_Inventory, source.m_Inventory);
-    EXPECT_EQ(decoded.m_Velocity, source.m_Velocity);
+    EXPECT_EQ(decoded.GetPosition().GetX(), source.GetPosition().GetX());
+    EXPECT_EQ(decoded.GetPosition().GetY(), source.GetPosition().GetY());
+    EXPECT_EQ(decoded.GetPosition().GetGrounded(), source.GetPosition().GetGrounded());
+    EXPECT_EQ(decoded.GetName(), source.GetName());
+    EXPECT_EQ(decoded.GetInventory(), source.GetInventory());
+    EXPECT_EQ(decoded.GetVelocity(), source.GetVelocity());
 }
 TEST(Binary, StableLittleEndianEnvelope)
 {
@@ -88,8 +175,8 @@ TEST(Binary, AllTruncationsPreserveDestination)
     {
         Actor target{{99, 42, false}, "unchanged", {7}, {}};
         EXPECT_FALSE(vigil::Deserialize(std::span(bytes).first(length), target)) << length;
-        EXPECT_EQ(target.m_Name, "unchanged");
-        EXPECT_EQ(target.m_Position.m_X, 99);
+        EXPECT_EQ(target.GetName(), "unchanged");
+        EXPECT_EQ(target.GetPosition().GetX(), 99);
     }
 }
 TEST(Binary, RejectsWrongComponentVersionAndTrailingData)
@@ -99,13 +186,13 @@ TEST(Binary, RejectsWrongComponentVersionAndTrailingData)
     Position target;
     auto bytes = original;
     bytes[4] ^= std::byte{1};
-    EXPECT_EQ(vigil::Deserialize(bytes, target).m_Error, vigil::BinaryError::WrongComponent);
+    EXPECT_EQ(vigil::Deserialize(bytes, target).GetError(), vigil::BinaryError::WrongComponent);
     bytes = original;
     bytes[12] = std::byte{2};
-    EXPECT_EQ(vigil::Deserialize(bytes, target).m_Error, vigil::BinaryError::UnsupportedVersion);
+    EXPECT_EQ(vigil::Deserialize(bytes, target).GetError(), vigil::BinaryError::UnsupportedVersion);
     bytes = original;
     bytes.push_back(std::byte{0});
-    EXPECT_EQ(vigil::Deserialize(bytes, target).m_Error, vigil::BinaryError::TrailingData);
+    EXPECT_EQ(vigil::Deserialize(bytes, target).GetError(), vigil::BinaryError::TrailingData);
 }
 TEST(Binary, RejectsDuplicateUnknownAndInvalidBoolean)
 {
@@ -115,13 +202,13 @@ TEST(Binary, RejectsDuplicateUnknownAndInvalidBoolean)
     // First record: 20-byte header, 12-byte Field header, 8-byte double.
     auto bytes = original;
     std::copy_n(bytes.begin() + 20, 8, bytes.begin() + 40);
-    EXPECT_EQ(vigil::Deserialize(bytes, target).m_Error, vigil::BinaryError::DuplicateField);
+    EXPECT_EQ(vigil::Deserialize(bytes, target).GetError(), vigil::BinaryError::DuplicateField);
     bytes = original;
     bytes[20] ^= std::byte{1};
-    EXPECT_EQ(vigil::Deserialize(bytes, target).m_Error, vigil::BinaryError::InvalidFormat);
+    EXPECT_EQ(vigil::Deserialize(bytes, target).GetError(), vigil::BinaryError::InvalidFormat);
     bytes = original;
     bytes.back() = std::byte{2};
-    EXPECT_EQ(vigil::Deserialize(bytes, target).m_Error, vigil::BinaryError::InvalidFormat);
+    EXPECT_EQ(vigil::Deserialize(bytes, target).GetError(), vigil::BinaryError::InvalidFormat);
 }
 TEST(Binary, EnforcesLimitsWithoutChangingOutput)
 {
@@ -130,21 +217,21 @@ TEST(Binary, EnforcesLimitsWithoutChangingOutput)
     ASSERT_TRUE(vigil::Serialize(actor, bytes));
     Actor target;
     vigil::BinaryLimits limits;
-    limits.m_MaxBytes = bytes.size() - 1;
-    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).m_Error, vigil::BinaryError::LimitExceeded);
+    limits.SetMaxBytes(bytes.size() - 1);
+    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).GetError(), vigil::BinaryError::LimitExceeded);
     limits = {};
-    limits.m_MaxStringBytes = 2;
-    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).m_Error, vigil::BinaryError::LimitExceeded);
+    limits.SetMaxStringBytes(2);
+    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).GetError(), vigil::BinaryError::LimitExceeded);
     limits = {};
-    limits.m_MaxSequenceElements = 1;
-    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).m_Error, vigil::BinaryError::LimitExceeded);
+    limits.SetMaxSequenceElements(1);
+    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).GetError(), vigil::BinaryError::LimitExceeded);
     limits = {};
-    limits.m_MaxDepth = 0;
-    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).m_Error, vigil::BinaryError::LimitExceeded);
+    limits.SetMaxDepth(0);
+    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).GetError(), vigil::BinaryError::LimitExceeded);
     auto output = bytes;
     limits = {};
-    limits.m_MaxBytes = 1;
-    EXPECT_EQ(vigil::Serialize(actor, output, limits).m_Error, vigil::BinaryError::LimitExceeded);
+    limits.SetMaxBytes(1);
+    EXPECT_EQ(vigil::Serialize(actor, output, limits).GetError(), vigil::BinaryError::LimitExceeded);
     EXPECT_EQ(output, bytes);
 }
 TEST(Binary, HugeMalformedStringDoesNotAllocate)
@@ -171,7 +258,7 @@ TEST(Binary, HugeMalformedStringDoesNotAllocate)
         offset += 12 + length;
     }
     Actor target;
-    EXPECT_EQ(vigil::Deserialize(bytes, target).m_Error, vigil::BinaryError::LimitExceeded);
+    EXPECT_EQ(vigil::Deserialize(bytes, target).GetError(), vigil::BinaryError::LimitExceeded);
 }
 
 TEST(Binary, BoundsAggregateDecodedStorage)
@@ -180,11 +267,11 @@ TEST(Binary, BoundsAggregateDecodedStorage)
     std::vector<std::byte> bytes;
     ASSERT_TRUE(vigil::Serialize(source, bytes));
     vigil::BinaryLimits limits;
-    limits.m_MaxDecodedBytes = 9;
+    limits.SetMaxDecodedBytes(9);
     Actor target;
-    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).m_Error, vigil::BinaryError::LimitExceeded);
-    EXPECT_TRUE(target.m_Name.empty());
-    limits.m_MaxDecodedBytes = 10;
+    EXPECT_EQ(vigil::Deserialize(bytes, target, limits).GetError(), vigil::BinaryError::LimitExceeded);
+    EXPECT_TRUE(target.GetName().empty());
+    limits.SetMaxDecodedBytes(10);
     EXPECT_TRUE(vigil::Deserialize(bytes, target, limits));
 }
 
@@ -203,8 +290,8 @@ TEST(Binary, MalformedMutationsRemainTransactional)
             const auto result = vigil::Deserialize(bytes, target);
             if (!result)
             {
-                EXPECT_EQ(target.m_Name, "preserved");
-                EXPECT_EQ(target.m_Position.m_X, 99);
+                EXPECT_EQ(target.GetName(), "preserved");
+                EXPECT_EQ(target.GetPosition().GetX(), 99);
             }
         }
     }

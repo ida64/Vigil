@@ -124,9 +124,33 @@ original SDK remains available unchanged through `VigilSDK`.
 
 struct Position
 {
-public: // Member Variables
-    double m_X = 0;
-    double m_Y = 0;
+public: // Methods
+    Position(double x = 0, double y = 0) noexcept : m_X(x), m_Y(y)
+    {
+    }
+    double GetX() const noexcept
+    {
+        return m_X;
+    }
+    double GetY() const noexcept
+    {
+        return m_Y;
+    }
+    void SetX(double value) noexcept
+    {
+        m_X = value;
+    }
+    void SetY(double value) noexcept
+    {
+        m_Y = value;
+    }
+
+private: // Friends
+    friend struct vigil::Schema<Position>;
+
+private: // Member Variables
+    double m_X;
+    double m_Y;
 }; // struct Position
 
 template <> struct vigil::Schema<Position>
@@ -145,10 +169,15 @@ static_assert(vigil::ComponentId<Position> == vigil::Id("game.Position"));
 `FieldDescriptor` values at compile time. `Describe<T>()` returns metadata by
 reference; `FindField<T>(Id("x"))` searches numeric identifiers with no allocation
 or string comparison. Cache the result outside simulation loops; simulation systems
-should access ordinary struct members directly. `m_Read` and `m_Write` provide
+should use component APIs that inline to ordinary member access. `Read` and `Write` provide
 inspection and plugin binding access to valid component instances, including structs
 with nonstandard layouts. They are a C++ SDK boundary, not a stable C ABI or plugin
-loader. No ECS is coupled to reflection.
+loader. No ECS is coupled to reflection. Component fields stay private: grant the matching
+`Schema<T>` specialization friendship to describe them. Descriptors expose read-only
+`GetId`, `GetName`, `GetKind`, `GetSize`, `GetVersion`, `GetFields`, and `GetInspection`
+accessors as appropriate; the generated metadata remains immutable. `BinaryLimits`
+exposes `GetMaxBytes`/`SetMaxBytes` and corresponding methods for sequence elements,
+string bytes, nesting depth, and aggregate decoded bytes.
 
 Identifiers use stable FNV-1a over explicit names. Use globally qualified component
 names and keep them stable across builds. Duplicate field identifiers are rejected
@@ -156,7 +185,7 @@ at compile time; application registries must reject component ID collisions. Nam
 passed to `Component` and `Field` must have static lifetime (normally string literals).
 
 `Serialize(value, output)` and `Deserialize(bytes, target)` return a `BinaryResult`
-with `m_Error`; neither replaces its destination on a reported failure. Allocation
+with `GetError()`; neither replaces its destination on a reported failure. Allocation
 exceptions propagate. Decode requires default construction and noexcept move
 assignment. Supported values are integers up to 64 bits, bools, IEEE floats, enums,
 strings, vectors, arrays, and nested reflected components. Raw pointers and arbitrary

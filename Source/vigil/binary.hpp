@@ -25,7 +25,49 @@ enum class BinaryError
 }; // enum class BinaryError
 struct BinaryLimits
 {
-public: // Member Variables
+public: // Methods
+    constexpr std::size_t GetMaxBytes() const noexcept
+    {
+        return m_MaxBytes;
+    }
+    constexpr std::size_t GetMaxSequenceElements() const noexcept
+    {
+        return m_MaxSequenceElements;
+    }
+    constexpr std::size_t GetMaxStringBytes() const noexcept
+    {
+        return m_MaxStringBytes;
+    }
+    constexpr std::size_t GetMaxDepth() const noexcept
+    {
+        return m_MaxDepth;
+    }
+    constexpr std::size_t GetMaxDecodedBytes() const noexcept
+    {
+        return m_MaxDecodedBytes;
+    }
+    constexpr void SetMaxBytes(std::size_t value) noexcept
+    {
+        m_MaxBytes = value;
+    }
+    constexpr void SetMaxSequenceElements(std::size_t value) noexcept
+    {
+        m_MaxSequenceElements = value;
+    }
+    constexpr void SetMaxStringBytes(std::size_t value) noexcept
+    {
+        m_MaxStringBytes = value;
+    }
+    constexpr void SetMaxDepth(std::size_t value) noexcept
+    {
+        m_MaxDepth = value;
+    }
+    constexpr void SetMaxDecodedBytes(std::size_t value) noexcept
+    {
+        m_MaxDecodedBytes = value;
+    }
+
+private: // Member Variables
     std::size_t m_MaxBytes = 16 * 1024 * 1024;
     std::size_t m_MaxSequenceElements = 1024 * 1024;
     std::size_t m_MaxStringBytes = 1024 * 1024;
@@ -34,21 +76,37 @@ public: // Member Variables
 }; // struct BinaryLimits
 struct BinaryResult
 {
-public: // Member Variables
-    BinaryError m_Error = BinaryError::None;
-
 public: // Methods
+    constexpr BinaryResult(BinaryError error = BinaryError::None) noexcept : m_Error(error)
+    {
+    }
+    constexpr BinaryError GetError() const noexcept
+    {
+        return m_Error;
+    }
     explicit operator bool() const noexcept
     {
         return m_Error == BinaryError::None;
     }
+
+private: // Member Variables
+    BinaryError m_Error;
 }; // struct BinaryResult
 
 namespace detail
 {
 struct BinaryFailure
 {
-public: // Member Variables
+public: // Methods
+    explicit BinaryFailure(BinaryError error) noexcept : m_Error(error)
+    {
+    }
+    BinaryError GetError() const noexcept
+    {
+        return m_Error;
+    }
+
+private: // Member Variables
     BinaryError m_Error;
 }; // struct BinaryFailure
 inline void Require(bool condition, BinaryError error)
@@ -58,14 +116,25 @@ inline void Require(bool condition, BinaryError error)
 }
 struct Writer
 {
-public: // Member Variables
-    std::vector<std::byte> m_Bytes;
-    const BinaryLimits &m_Limits;
-
 public: // Methods
+    explicit Writer(const BinaryLimits &limits) noexcept : m_Limits(limits)
+    {
+    }
+    const BinaryLimits &GetLimits() const noexcept
+    {
+        return m_Limits;
+    }
+    std::size_t GetSize() const noexcept
+    {
+        return m_Bytes.size();
+    }
+    std::vector<std::byte> TakeBytes() && noexcept
+    {
+        return std::move(m_Bytes);
+    }
     void Integer(std::uint64_t value, std::size_t width)
     {
-        Require(m_Bytes.size() <= m_Limits.m_MaxBytes && width <= m_Limits.m_MaxBytes - m_Bytes.size(),
+        Require(m_Bytes.size() <= m_Limits.GetMaxBytes() && width <= m_Limits.GetMaxBytes() - m_Bytes.size(),
                 BinaryError::LimitExceeded);
         for (std::size_t i = 0; i < width; ++i)
             m_Bytes.push_back(std::byte((value >> (i * 8)) & 0xff));
@@ -75,23 +144,41 @@ public: // Methods
         for (std::size_t i = 0; i < 4; ++i)
             m_Bytes[offset + i] = std::byte((value >> (i * 8)) & 0xff);
     }
+
+private: // Member Variables
+    std::vector<std::byte> m_Bytes;
+    const BinaryLimits &m_Limits;
 }; // struct Writer
 struct Reader
 {
-public: // Member Variables
-    std::span<const std::byte> m_Bytes;
-    const BinaryLimits &m_Limits;
-    std::size_t m_Offset = 0;
-    std::size_t *m_DecodedBytes = nullptr;
-
 public: // Methods
+    Reader(std::span<const std::byte> bytes, const BinaryLimits &limits, std::size_t &decodedBytes) noexcept
+        : m_Bytes(bytes), m_Limits(limits), m_DecodedBytes(decodedBytes)
+    {
+    }
+    const BinaryLimits &GetLimits() const noexcept
+    {
+        return m_Limits;
+    }
+    std::span<const std::byte> GetBytes() const noexcept
+    {
+        return m_Bytes;
+    }
+    std::size_t GetOffset() const noexcept
+    {
+        return m_Offset;
+    }
+    bool IsAtEnd() const noexcept
+    {
+        return m_Offset == m_Bytes.size();
+    }
     void Charge(std::size_t count, std::size_t elementSize)
     {
-        Require(elementSize == 0 || count <= m_Limits.m_MaxDecodedBytes / elementSize, BinaryError::LimitExceeded);
+        Require(elementSize == 0 || count <= m_Limits.GetMaxDecodedBytes() / elementSize, BinaryError::LimitExceeded);
         const auto bytes = count * elementSize;
-        Require(*m_DecodedBytes <= m_Limits.m_MaxDecodedBytes && bytes <= m_Limits.m_MaxDecodedBytes - *m_DecodedBytes,
+        Require(m_DecodedBytes <= m_Limits.GetMaxDecodedBytes() && bytes <= m_Limits.GetMaxDecodedBytes() - m_DecodedBytes,
                 BinaryError::LimitExceeded);
-        *m_DecodedBytes += bytes;
+        m_DecodedBytes += bytes;
     }
     std::uint64_t Integer(std::size_t width)
     {
@@ -104,10 +191,16 @@ public: // Methods
     Reader Slice(std::size_t length)
     {
         Require(length <= m_Bytes.size() - m_Offset, BinaryError::Truncated);
-        auto result = Reader{m_Bytes.subspan(m_Offset, length), m_Limits, 0, m_DecodedBytes};
+        auto result = Reader{m_Bytes.subspan(m_Offset, length), m_Limits, m_DecodedBytes};
         m_Offset += length;
         return result;
     }
+
+private: // Member Variables
+    std::span<const std::byte> m_Bytes;
+    const BinaryLimits &m_Limits;
+    std::size_t m_Offset = 0;
+    std::size_t &m_DecodedBytes;
 }; // struct Reader
 template <class T> struct IsVector : std::false_type
 {
@@ -125,7 +218,7 @@ template <class> inline constexpr bool Unsupported = false;
 
 template <class T> void Encode(Writer &out, const T &value, std::size_t depth)
 {
-    Require(depth <= out.m_Limits.m_MaxDepth, BinaryError::LimitExceeded);
+    Require(depth <= out.GetLimits().GetMaxDepth(), BinaryError::LimitExceeded);
     if constexpr (std::same_as<T, bool>)
         out.Integer(value ? 1 : 0, 1);
     else if constexpr (std::is_integral_v<T>)
@@ -145,7 +238,7 @@ template <class T> void Encode(Writer &out, const T &value, std::size_t depth)
     }
     else if constexpr (std::same_as<T, std::string>)
     {
-        Require(value.size() <= out.m_Limits.m_MaxStringBytes && value.size() <= UINT32_MAX,
+        Require(value.size() <= out.GetLimits().GetMaxStringBytes() && value.size() <= UINT32_MAX,
                 BinaryError::LimitExceeded);
         out.Integer(value.size(), 4);
         for (unsigned char c : value)
@@ -153,7 +246,7 @@ template <class T> void Encode(Writer &out, const T &value, std::size_t depth)
     }
     else if constexpr (IsVector<T>::value || IsArray<T>::value)
     {
-        Require(value.size() <= out.m_Limits.m_MaxSequenceElements && value.size() <= UINT32_MAX,
+        Require(value.size() <= out.GetLimits().GetMaxSequenceElements() && value.size() <= UINT32_MAX,
                 BinaryError::LimitExceeded);
         out.Integer(value.size(), 4);
         for (const auto &item : value)
@@ -168,26 +261,26 @@ template <class T> void Encode(Writer &out, const T &value, std::size_t depth)
     {
         const auto &descriptor = Describe<T>();
         out.Integer(0x43534756, 4); // VGSC
-        out.Integer(descriptor.m_Id, 8);
-        out.Integer(descriptor.m_Version, 4);
-        out.Integer(descriptor.m_Inspection.size(), 4);
+        out.Integer(descriptor.GetId(), 8);
+        out.Integer(descriptor.GetVersion(), 4);
+        out.Integer(descriptor.GetInspection().size(), 4);
         std::apply(
             [&](const auto &...fields)
             {
                 (
                     [&]
                     {
-                        out.Integer(fields.m_Id, 8);
-                        auto lengthOffset = out.m_Bytes.size();
+                        out.Integer(fields.GetId(), 8);
+                        auto lengthOffset = out.GetSize();
                         out.Integer(0, 4);
-                        auto start = out.m_Bytes.size();
+                        auto start = out.GetSize();
                         Encode(out, value.*(fields.ms_Pointer), depth + 1);
-                        Require(out.m_Bytes.size() - start <= UINT32_MAX, BinaryError::LimitExceeded);
-                        out.Patch(lengthOffset, out.m_Bytes.size() - start);
+                        Require(out.GetSize() - start <= UINT32_MAX, BinaryError::LimitExceeded);
+                        out.Patch(lengthOffset, out.GetSize() - start);
                     }(),
                     ...);
             },
-            descriptor.m_Fields);
+            descriptor.GetFields());
     }
     else
         static_assert(Unsupported<T>, "No portable binary codec for this type");
@@ -195,7 +288,7 @@ template <class T> void Encode(Writer &out, const T &value, std::size_t depth)
 
 template <class T> void Decode(Reader &in, T &value, std::size_t depth)
 {
-    Require(depth <= in.m_Limits.m_MaxDepth, BinaryError::LimitExceeded);
+    Require(depth <= in.GetLimits().GetMaxDepth(), BinaryError::LimitExceeded);
     if constexpr (std::same_as<T, bool>)
     {
         auto raw = in.Integer(1);
@@ -225,15 +318,15 @@ template <class T> void Decode(Reader &in, T &value, std::size_t depth)
     else if constexpr (std::same_as<T, std::string>)
     {
         auto length = in.Integer(4);
-        Require(length <= in.m_Limits.m_MaxStringBytes, BinaryError::LimitExceeded);
+        Require(length <= in.GetLimits().GetMaxStringBytes(), BinaryError::LimitExceeded);
         auto data = in.Slice(length);
         in.Charge(length, sizeof(char));
-        value.assign(reinterpret_cast<const char *>(data.m_Bytes.data()), data.m_Bytes.size());
+        value.assign(reinterpret_cast<const char *>(data.GetBytes().data()), data.GetBytes().size());
     }
     else if constexpr (IsVector<T>::value || IsArray<T>::value)
     {
         auto count = in.Integer(4);
-        Require(count <= in.m_Limits.m_MaxSequenceElements, BinaryError::LimitExceeded);
+        Require(count <= in.GetLimits().GetMaxSequenceElements(), BinaryError::LimitExceeded);
         if constexpr (IsVector<T>::value)
         {
             in.Charge(count, sizeof(typename T::value_type));
@@ -256,13 +349,13 @@ template <class T> void Decode(Reader &in, T &value, std::size_t depth)
     {
         const auto &descriptor = Describe<T>();
         Require(in.Integer(4) == 0x43534756, BinaryError::InvalidFormat);
-        Require(in.Integer(8) == descriptor.m_Id, BinaryError::WrongComponent);
-        Require(in.Integer(4) == descriptor.m_Version, BinaryError::UnsupportedVersion);
+        Require(in.Integer(8) == descriptor.GetId(), BinaryError::WrongComponent);
+        Require(in.Integer(4) == descriptor.GetVersion(), BinaryError::UnsupportedVersion);
         auto count = in.Integer(4);
-        Require(count == descriptor.m_Inspection.size(), BinaryError::InvalidFormat);
+        Require(count == descriptor.GetInspection().size(), BinaryError::InvalidFormat);
         // Refer to the schema type directly: GCC 14 cannot deduce the local auto
         // descriptor when this extent is captured by the nested generic lambda.
-        std::array<bool, std::tuple_size_v<decltype(Schema<T>::ms_Descriptor.m_Fields)>> seen{};
+        std::array<bool, std::tuple_size_v<typename std::remove_cvref_t<decltype(Schema<T>::ms_Descriptor)>::FieldsType>> seen{};
         for (std::size_t i = 0; i < count; ++i)
         {
             auto fieldId = in.Integer(8);
@@ -276,19 +369,19 @@ template <class T> void Decode(Reader &in, T &value, std::size_t depth)
                     (
                         [&]
                         {
-                            if (fields.m_Id == fieldId)
+                            if (fields.GetId() == fieldId)
                             {
                                 Require(!seen[index], BinaryError::DuplicateField);
                                 seen[index] = true;
                                 found = true;
                                 Decode(payload, value.*(fields.ms_Pointer), depth + 1);
-                                Require(payload.m_Offset == payload.m_Bytes.size(), BinaryError::TrailingData);
+                                Require(payload.IsAtEnd(), BinaryError::TrailingData);
                             }
                             ++index;
                         }(),
                         ...);
                 },
-                descriptor.m_Fields);
+                descriptor.GetFields());
             Require(found, BinaryError::InvalidFormat);
         }
         for (bool present : seen)
@@ -305,35 +398,35 @@ template <Reflected T> BinaryResult Serialize(const T &value, std::vector<std::b
 {
     try
     {
-        detail::Writer out{{}, limits};
+        detail::Writer out{limits};
         detail::Encode(out, value, 0);
-        output = std::move(out.m_Bytes);
+        output = std::move(out).TakeBytes();
         return {};
     }
     catch (const detail::BinaryFailure &failure)
     {
-        return {failure.m_Error};
+        return {failure.GetError()};
     }
 }
 /** @brief Decode bounded component data transactionally, rejecting schema mismatches. */
 template <Reflected T> BinaryResult Deserialize(std::span<const std::byte> bytes, T &value, BinaryLimits limits = {})
 {
     static_assert(std::is_nothrow_move_assignable_v<T>, "Transactional Decode requires noexcept move assignment");
-    if (bytes.size() > limits.m_MaxBytes)
+    if (bytes.size() > limits.GetMaxBytes())
         return {BinaryError::LimitExceeded};
     try
     {
         T candidate{};
         std::size_t decodedBytes = 0;
-        detail::Reader in{bytes, limits, 0, &decodedBytes};
+        detail::Reader in{bytes, limits, decodedBytes};
         detail::Decode(in, candidate, 0);
-        detail::Require(in.m_Offset == bytes.size(), BinaryError::TrailingData);
+        detail::Require(in.IsAtEnd(), BinaryError::TrailingData);
         value = std::move(candidate);
         return {};
     }
     catch (const detail::BinaryFailure &failure)
     {
-        return {failure.m_Error};
+        return {failure.GetError()};
     }
 }
 } // namespace vigil

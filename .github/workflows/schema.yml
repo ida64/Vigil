@@ -1,0 +1,18 @@
+name: C++23 Schema Tests
+on: [push, pull_request]
+jobs:
+  schema:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+      - name: Configure
+        run: cmake -S . -B build-schema -G Ninja -DVIGIL_BUILD_LEGACY=OFF -DVIGIL_BUILD_SCHEMA_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build-schema
+      - name: Test
+        run: ctest --test-dir build-schema --output-on-failure

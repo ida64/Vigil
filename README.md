@@ -112,3 +112,80 @@ And that should be it! This script builds both Release and Debug Lib/UnitTest.
 
 [MIT](https://choosealicense.com/licenses/mit/)
 
+
+## C++23 component schemas
+
+The additive `vigil::schema` CMake target provides header-only, plain-struct reflection
+without `Object` inheritance, JSON, the Clang parser, or runtime registration. The
+original SDK remains available unchanged through `VigilSDK`.
+
+```cpp
+#include <vigil/binary.hpp>
+
+struct Position
+{
+public: // Member Variables
+    double m_X = 0;
+    double m_Y = 0;
+}; // struct Position
+
+template <> struct vigil::Schema<Position>
+{
+public: // Static Variables
+    static constexpr auto ms_Descriptor = vigil::Component<Position>(
+        "game.Position", 1,
+        vigil::Field<&Position::m_X>("x"),
+        vigil::Field<&Position::m_Y>("y"));
+}; // struct vigil::Schema<Position>
+
+static_assert(vigil::ComponentId<Position> == vigil::Id("game.Position"));
+```
+
+`Component` generates typed member-pointer metadata and a static array of erased
+`FieldDescriptor` values at compile time. `Describe<T>()` returns metadata by
+reference; `FindField<T>(Id("x"))` searches numeric identifiers with no allocation
+or string comparison. Cache the result outside simulation loops; simulation systems
+should access ordinary struct members directly. `m_Read` and `m_Write` provide
+inspection and plugin binding access to valid component instances, including structs
+with nonstandard layouts. They are a C++ SDK boundary, not a stable C ABI or plugin
+loader. No ECS is coupled to reflection.
+
+Identifiers use stable FNV-1a over explicit names. Use globally qualified component
+names and keep them stable across builds. Duplicate field identifiers are rejected
+at compile time; application registries must reject component ID collisions. Names
+passed to `Component` and `Field` must have static lifetime (normally string literals).
+
+`Serialize(value, output)` and `Deserialize(bytes, target)` return a `BinaryResult`
+with `m_Error`; neither replaces its destination on a reported failure. Allocation
+exceptions propagate. Decode requires default construction and noexcept move
+assignment. Supported values are integers up to 64 bits, bools, IEEE floats, enums,
+strings, vectors, arrays, and nested reflected components. Raw pointers and arbitrary
+object representations are deliberately unsupported; enum domain validation belongs
+to the application.
+
+The binary format uses explicit little-endian integers: `VGSC` magic, 64-bit component
+ID, 32-bit schema version and field count, then each 64-bit field ID, 32-bit payload
+length and encoded value. String/sequence lengths are 32-bit. Nested components have
+their own envelopes. Decoders reject unknown/missing/duplicate fields, schema version
+mismatches, invalid bools, truncation and trailing bytes. Change schema versions whenever
+a field's type or meaning changes; migrations are explicit application code, not silent
+reinterpretations. This is a component persistence primitive, not a complete world save
+format or Minecraft Anvil/NBT compatibility implementation.
+
+`BinaryLimits` bounds input/output bytes, string bytes, sequence lengths, nesting,
+and aggregate decoded dynamic storage (`m_MaxDecodedBytes`, excluding allocator
+bookkeeping and preexisting/default-constructed application objects). Untrusted data
+is checked before dynamic storage is allocated. A failed decode never mutates the
+caller's component.
+
+Build and test the independent API with CMake, Ninja and GoogleTest:
+
+```sh
+cmake -S . -B build-schema -G Ninja -DVIGIL_BUILD_LEGACY=OFF -DVIGIL_BUILD_SCHEMA_TESTS=ON
+cmake --build build-schema
+ctest --test-dir build-schema --output-on-failure
+```
+
+GoogleTest is found locally or fetched at a pinned commit. Set
+`VIGIL_BUILD_SCHEMA_TESTS=OFF` for dependency-free embedding, then link
+`vigil::schema` after `add_subdirectory(path/to/Vigil)`.
